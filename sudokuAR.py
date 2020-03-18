@@ -6,24 +6,11 @@ from matplotlib import pyplot as plt
 
 def getHoughLines(image):
 
-    # gray scale
-    grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    # gaussian blur
-    blur = cv2.GaussianBlur(grey, (5, 5), 0)
-    # adaptive thresholding
-    threshold = cv2.adaptiveThreshold(
-        blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 2)
-    # invert black/white so that contours are white
-    invert = cv2.bitwise_not(threshold)
-
-    # maybe better than adaptive thresholding
-    # edges = cv2.Canny(gray, 50, 150, apertureSize=3)
-
     # get hough transform
-    lines = cv2.HoughLinesP(invert, 1, np.pi/180, 50, minLineLength=5)
+    lines = cv2.HoughLinesP(image, 1, np.pi/180, 50, minLineLength=5)
 
-    # create blank black image with only one channel
-    hough_lines = np.zeros(invert.shape, dtype=np.uint8)
+    # create blank black image with only one color channel
+    hough_lines = np.zeros(image.shape, dtype=np.uint8)
 
     # check if any lines were found
     if lines is not None:
@@ -40,7 +27,7 @@ def getMaxRectangle(image):
 
     max_rectangle = np.zeros((4, 2), dtype="float32")
 
-    # get all contours in given image
+    # get all contours in given image (contours must be white)
     contours, hierarchy = cv2.findContours(
         image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -80,7 +67,20 @@ def getMaxRectangle(image):
 
 def getSudokuGrid(image, width, height):
 
-    hough_lines = getHoughLines(image)
+    # gray scale
+    grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # gaussian blur
+    blur = cv2.GaussianBlur(grey, (5, 5), 0)
+    # adaptive thresholding
+    threshold = cv2.adaptiveThreshold(
+        blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 2)
+    # invert black/white so that contours are white
+    invert = cv2.bitwise_not(threshold)
+
+    # maybe better than adaptive thresholding
+    # edges = cv2.Canny(gray, 50, 150, apertureSize=3)
+
+    hough_lines = getHoughLines(invert)
     max_rectangle = getMaxRectangle(hough_lines)
     # draw max rectangle
     cv2.imshow('Max Area Rectangle', cv2.polylines(
@@ -93,7 +93,7 @@ def getSudokuGrid(image, width, height):
     # get inverse transformation of current prespectiv and apply it on given image
     perspective_trans = cv2.getPerspectiveTransform(
         max_rectangle, reference_rectangle)
-    warp = cv2.warpPerspective(image, perspective_trans, (width, height))
+    warp = cv2.warpPerspective(invert, perspective_trans, (width, height))
 
     return warp
 
@@ -106,9 +106,9 @@ def resize(image):
 
 def main():
     # get webcam feed
-    capture = cv2.VideoCapture('photo.jpg', 0)
-    # capture = cv2.VideoCapture(
-    #     'https://test:test123@192.168.178.70:8080/video')
+    # capture = cv2.VideoCapture('photo.jpg', 0)
+    capture = cv2.VideoCapture(
+        'https://test:test123@192.168.178.70:8080/video')
 
     # check if feed could be captured
     if not capture.isOpened():
