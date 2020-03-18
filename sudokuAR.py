@@ -65,7 +65,7 @@ def getMaxRectangle(image):
     return max_rectangle
 
 
-def getSudokuGrid(image, width, height):
+def getSudokuGrid(image, height, width):
 
     # gray scale
     grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -93,22 +93,42 @@ def getSudokuGrid(image, width, height):
     # get inverse transformation of current prespectiv and apply it on given image
     perspective_trans = cv2.getPerspectiveTransform(
         max_rectangle, reference_rectangle)
-    warp = cv2.warpPerspective(invert, perspective_trans, (width, height))
+    warp = cv2.warpPerspective(threshold, perspective_trans, (width, height))
 
     return warp
 
 
-def resize(image):
+def getCellImages(grid, cell_height, cell_width):
+
+    # empty cell images
+    cell_images = np.zeros((9, 9, cell_height, cell_width), dtype="uint8")
+
+    for i in range(9):
+        for j in range(9):
+            # cut out cells
+            pt_x = cell_width * j
+            pt_y = cell_height * i
+            cell_images[i][j] = grid[pt_y:pt_y +
+                                     cell_height, pt_x:pt_x + cell_width]
+
+    return cell_images
+
+
+def resize(image, fx, fy):
     # scale image
-    return cv2.resize(image, None, fx=0.8, fy=0.8,
+    return cv2.resize(image, None, fx=fx, fy=fy,
                       interpolation=cv2.INTER_CUBIC)
 
 
 def main():
+
+    SUDOKU_GRID_HEIGHT = 400
+    SUDOKU_GRID_WIDTH = 400
+
     # get webcam feed
-    # capture = cv2.VideoCapture('photo.jpg', 0)
-    capture = cv2.VideoCapture(
-        'https://test:test123@192.168.178.70:8080/video')
+    capture = cv2.VideoCapture('photo.jpg', 0)
+    # capture = cv2.VideoCapture(
+    #     'https://test:test123@192.168.178.70:8080/video')
 
     # check if feed could be captured
     if not capture.isOpened():
@@ -126,9 +146,20 @@ def main():
         # show webcam frame
         cv2.imshow('Webcam', frame)
 
+        sudoku_grid = getSudokuGrid(
+            frame, SUDOKU_GRID_HEIGHT, SUDOKU_GRID_WIDTH)
+
         # show converted frame
-        cv2.imshow('Perspective Transformed',
-                   getSudokuGrid(frame, 400, 400))
+        cv2.imshow('Perspective Transformed', sudoku_grid)
+
+        cell_images = getCellImages(sudoku_grid, int(
+            SUDOKU_GRID_HEIGHT / 9), int(SUDOKU_GRID_WIDTH / 9))
+
+        # show all cell images
+        # for i in range(9):
+        #     for j in range(9):
+        #         cv2.imshow(str(i) + "," + str(j), cell_images[i][j])
+        #         cv2.resizeWindow(str(i) + "," + str(j), 200, 200)
 
         # wait 1 ms or quit if 'q' is pressed
         if cv2.waitKey(1) & 0xFF == ord('q'):
