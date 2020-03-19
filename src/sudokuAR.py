@@ -3,6 +3,8 @@ import cv2
 import numpy as np
 from matplotlib import pyplot as plt
 
+DATADIR = "../data/"
+
 
 def getHoughLines(image):
 
@@ -122,11 +124,11 @@ def resize(image, fx, fy):
 
 def main():
 
-    SUDOKU_GRID_HEIGHT = 400
-    SUDOKU_GRID_WIDTH = 400
+    SUDOKU_GRID_HEIGHT = 450
+    SUDOKU_GRID_WIDTH = 450
 
     # get webcam feed
-    capture = cv2.VideoCapture('photo.jpg', 0)
+    capture = cv2.VideoCapture(DATADIR + "photo.jpg", 0)
     # capture = cv2.VideoCapture(
     #     'https://test:test123@192.168.178.70:8080/video')
 

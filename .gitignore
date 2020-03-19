@@ -1,6 +1,7 @@
 # Project related
 .vscode
 *.jpg
+data
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
