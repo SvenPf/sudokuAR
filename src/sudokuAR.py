@@ -100,10 +100,9 @@ def getSudokuGrid(image, height, width):
     return warp
 
 
-def getCellImages(grid, cell_height, cell_width):
+def getDigitImages(grid, cell_height, cell_width):
 
-    # empty cell images
-    cell_images = np.zeros((9, 9, cell_height, cell_width), dtype="uint8")
+    digit_images = []
 
     center_x = int(cell_width / 2)
     center_y = int(cell_height / 2)
@@ -118,7 +117,7 @@ def getCellImages(grid, cell_height, cell_width):
             pt_x = cell_width * j
             pt_y = cell_height * i
             cell_image = grid[pt_y:pt_y +
-                                     cell_height, pt_x:pt_x + cell_width]
+                              cell_height, pt_x:pt_x + cell_width]
 
             # check for emtpy cell and erase unwanted grid parts and center digit
             # start scan at the center of the cell
@@ -144,43 +143,60 @@ def getCellImages(grid, cell_height, cell_width):
                     break
 
             for x in range(scan_border_x + 1):
-                #scan to left
+                # scan to left
                 if((col_left == 0) & (np.sum(scan_image[(center_y - scan_border_y):(center_y + scan_border_y), center_x - x]) < threshold)):
                     col_left = center_x - x
-                #scan to right
+                # scan to right
                 if((col_right == cell_width) & (np.sum(scan_image[(center_y - scan_border_y):(center_y + scan_border_y), center_x + x]) < threshold)):
                     col_right = center_x + x
                 if((col_left != 0) & (col_right != cell_width)):
                     break
 
-            # empty cell
-            if((row_top == center_y) & (row_bottom == center_y) & (col_left == center_x) & (col_right == center_x)):
-                cell_images[i][j] = np.zeros(cell_image.shape, dtype=np.uint8)
-            else:
-                # fill image of digit
-                cell_images[i][j] = cell_image
+            # non empty cell
+            if((row_top != center_y) & (row_bottom != center_y) & (col_left != center_x) & (col_right != center_x)):
+
+                # get bounded image of digit
+                digit_image = cell_image[row_top:row_bottom,
+                                         col_left:col_right]
+
+                # height and width of digit
+                digit_width = int(col_right - col_left)
+                digit_height = int(row_bottom - row_top)
+
+                # calculate padding size left/right, top/bottom
+                pad_lr = int((cell_width - digit_width) / 2)
+                pad_tb = int((cell_height - digit_height) / 2)
+
+                # int(...) may round down so we need to add the lost pixel
+                pad_lr_correction = cell_width - (digit_width + pad_lr * 2)
+                pad_tb_correction = cell_height - (digit_height + pad_tb * 2)
+
+                # pad digit image
+                padded_digit = cv2.copyMakeBorder(digit_image, pad_tb, pad_tb + pad_tb_correction,
+                                                  pad_lr, pad_lr + pad_lr_correction, cv2.BORDER_CONSTANT, None, value=255)
+
+                # add digit image and its location on the sudoku grid to the list
+                digit_images.append((padded_digit, i, j))
 
                 # DEBUG ----------------------------------------------
                 # print(row_top, row_bottom, col_left, col_right)
-                # cv2.imshow("scan", scan_image)
+                # cv2.imshow("input", scan_image)
                 # cv2.waitKey(0)
-
-                # cv2.imshow("input", cell_image[row_top:row_bottom, col_left:col_right])
+                # print(padded_digit.shape)
+                # cv2.imshow("scan", padded_digit)
                 # cv2.waitKey(0)
                 # ----------------------------------------------------
 
     # DEBUG ---------------------------------------
-    # from classifier.numberClassifier import predict
+    from classifier.numberClassifier import predict
 
-    # for i in range(9):
-    #     for j in range(9):
-    #         print(predict(cell_images[i][j]))
-    #         cv2.imshow("test", cell_images[i][j])
-    #         cv2.waitKey(0)
+    for (digit_image, i, j) in digit_images:
+        print(predict(digit_image))
+        cv2.imshow("prediction", digit_image)
+        cv2.waitKey(0)
     # ---------------------------------------------
 
-
-    return cell_images
+    return digit_images
 
 
 def resize(image, fx, fy):
@@ -221,7 +237,7 @@ def main():
         # show converted frame
         cv2.imshow('Perspective Transformed', sudoku_grid)
 
-        cell_images = getCellImages(sudoku_grid, int(
+        digit_images = getDigitImages(sudoku_grid, int(
             SUDOKU_GRID_HEIGHT / 9), int(SUDOKU_GRID_WIDTH / 9))
 
         # show all cell images
