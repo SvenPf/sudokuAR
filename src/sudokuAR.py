@@ -107,7 +107,7 @@ def getDigitImages(grid, cell_height, cell_width):
     center_x = int(cell_width / 2)
     center_y = int(cell_height / 2)
 
-    threshold = 50
+    threshold = 20
     scan_border_x = int(center_x * 0.65)
     scan_border_y = int(center_y * 0.65)
 
@@ -126,30 +126,39 @@ def getDigitImages(grid, cell_height, cell_width):
             # if sum of scan vector is less then threshold -> border found
 
             # scanned borders
-            row_top = 0
-            row_bottom = cell_height
-            col_left = 0
-            col_right = cell_width
+            row_top = center_y - scan_border_y # top edge of scan border on y axis
+            row_bottom = center_y + scan_border_y # bottom edge of scan border on y axis
+            col_left = center_x - scan_border_x # left edge of scan border on x axis
+            col_right = center_x + scan_border_x # right edge of scan border on x axis
             scan_image = cv2.bitwise_not(cell_image)
+
+            top_b_found = False
+            bottom_b_found = False
+            left_b_found = False
+            right_b_found = False
 
             for y in range(scan_border_y + 1):
                 # scan to top
-                if((row_top == 0) & (np.sum(scan_image[center_y - y, (center_x - scan_border_x):(center_x + scan_border_x)]) < threshold)):
+                if((not top_b_found) & (np.sum(scan_image[center_y - y, (center_x - scan_border_x):(center_x + scan_border_x)]) < threshold)):
                     row_top = center_y - y
+                    top_b_found = True
                 # scan to bottom
-                if((row_bottom == cell_height) & (np.sum(scan_image[center_y + y, (center_x - scan_border_x):(center_x + scan_border_x)]) < threshold)):
+                if((not bottom_b_found) & (np.sum(scan_image[center_y + y, (center_x - scan_border_x):(center_x + scan_border_x)]) < threshold)):
                     row_bottom = center_y + y
-                if((row_top != 0) & (row_bottom != cell_height)):
+                    bottom_b_found = True
+                if(top_b_found & bottom_b_found):
                     break
 
             for x in range(scan_border_x + 1):
                 # scan to left
-                if((col_left == 0) & (np.sum(scan_image[(center_y - scan_border_y):(center_y + scan_border_y), center_x - x]) < threshold)):
+                if((not left_b_found) & (np.sum(scan_image[(center_y - scan_border_y):(center_y + scan_border_y), center_x - x]) < threshold)):
                     col_left = center_x - x
+                    left_b_found = True
                 # scan to right
-                if((col_right == cell_width) & (np.sum(scan_image[(center_y - scan_border_y):(center_y + scan_border_y), center_x + x]) < threshold)):
+                if((not right_b_found) & (np.sum(scan_image[(center_y - scan_border_y):(center_y + scan_border_y), center_x + x]) < threshold)):
                     col_right = center_x + x
-                if((col_left != 0) & (col_right != cell_width)):
+                    right_b_found = True
+                if(left_b_found & right_b_found):
                     break
 
             # non empty cell
