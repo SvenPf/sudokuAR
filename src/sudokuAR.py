@@ -114,6 +114,7 @@ def cutOutDigit(cell_image, center_x, center_y):
     scan_border_x = int(center_x * 0.65)
     scan_border_y = int(center_y * 0.65)
 
+    # scanning needs white digit on black background (for sum)
     scan_image = cv2.bitwise_not(cell_image)
 
     # scanned borders
@@ -156,7 +157,7 @@ def cutOutDigit(cell_image, center_x, center_y):
         # get bounded image of digit
         cut_digit = cell_image[row_top:row_bottom, col_left:col_right]
 
-        # DEBUG ----------------------------------------------
+        # DEBUG : visualizes scanning grid -------------------
         # test_image = cv2.rectangle(cell_image.copy(), (col_left, row_top), (col_right, row_bottom), (0, 0, 0), 1)
         # cv2.line(test_image, (center_x, center_y - scan_border_y), (center_x, center_y + scan_border_y), (0, 0, 0), 1)
         # cv2.line(test_image, (center_x - scan_border_x, center_y), (center_x + scan_border_x, center_y), (0, 0, 0), 1)
