@@ -101,7 +101,7 @@ def getSudokuGrid(image, height, width):
 
 
 def cutOutDigit(cell_image, center_x, center_y):
-    # expects inverted binary cell_image
+    # expects thresholded cell_image
     # check for emtpy cell and erase unwanted grid parts and center digit
     # start scan at the center of the cell
     # scan row to top/bottom with scan width of percentage of cell_width
