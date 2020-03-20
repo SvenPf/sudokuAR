@@ -29,7 +29,8 @@ def createTrainingData():
     # give every sample its matching label
     for sample_name in SAMPLENAMES:
 
-        label = SAMPLENAMES.index(sample_name) + 1  # class
+        # class 0 -> number 1, class 1 -> number 2, ...
+        label = SAMPLENAMES.index(sample_name)
 
         print("Creating training set for " +
               sample_name + " (Class " + str(label) + ")")
