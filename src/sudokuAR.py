@@ -100,6 +100,108 @@ def getSudokuGrid(image, height, width):
     return warp
 
 
+def cutOutDigit(cell_image, center_x, center_y):
+    # expects inverted binary cell_image
+    # check for emtpy cell and erase unwanted grid parts and center digit
+    # start scan at the center of the cell
+    # scan row to top/bottom with scan width of percentage of cell_width
+    # scan column to left/right with scan width of percentage of cell_height
+    # if sum of scan vector is less then threshold -> border found
+
+    cut_digit = []
+
+    threshold = 20
+    scan_border_x = int(center_x * 0.65)
+    scan_border_y = int(center_y * 0.65)
+
+    scan_image = cv2.bitwise_not(cell_image)
+
+    # scanned borders
+    row_top = center_y - scan_border_y  # top edge of scan border on y axis
+    row_bottom = center_y + scan_border_y  # bottom edge of scan border on y axis
+    col_left = center_x - scan_border_x  # left edge of scan border on x axis
+    col_right = center_x + scan_border_x  # right edge of scan border on x axis
+
+    top_b_found = False
+    bottom_b_found = False
+    left_b_found = False
+    right_b_found = False
+
+    for y in range(scan_border_y + 1):
+        # scan to top
+        if((not top_b_found) & (np.sum(scan_image[center_y - y, (center_x - scan_border_x):(center_x + scan_border_x)]) < threshold)):
+            row_top = center_y - y
+            top_b_found = True
+        # scan to bottom
+        if((not bottom_b_found) & (np.sum(scan_image[center_y + y, (center_x - scan_border_x):(center_x + scan_border_x)]) < threshold)):
+            row_bottom = center_y + y
+            bottom_b_found = True
+        if(top_b_found & bottom_b_found):
+            break
+
+    for x in range(scan_border_x + 1):
+        # scan to left
+        if((not left_b_found) & (np.sum(scan_image[(center_y - scan_border_y):(center_y + scan_border_y), center_x - x]) < threshold)):
+            col_left = center_x - x
+            left_b_found = True
+        # scan to right
+        if((not right_b_found) & (np.sum(scan_image[(center_y - scan_border_y):(center_y + scan_border_y), center_x + x]) < threshold)):
+            col_right = center_x + x
+            right_b_found = True
+        if(left_b_found & right_b_found):
+            break
+
+    # non empty cell
+    if((row_top != center_y) & (row_bottom != center_y) & (col_left != center_x) & (col_right != center_x)):
+        # get bounded image of digit
+        cut_digit = cell_image[row_top:row_bottom, col_left:col_right]
+
+        # DEBUG ----------------------------------------------
+        # test_image = cv2.rectangle(cell_image.copy(), (col_left, row_top), (col_right, row_bottom), (0, 0, 0), 1)
+        # cv2.line(test_image, (center_x, center_y - scan_border_y), (center_x, center_y + scan_border_y), (0, 0, 0), 1)
+        # cv2.line(test_image, (center_x - scan_border_x, center_y), (center_x + scan_border_x, center_y), (0, 0, 0), 1)
+        # cv2.imshow("input", cv2.resize(test_image, (test_image.shape[1] * 3, test_image.shape[0] * 3)))
+        # cv2.waitKey(0)
+        # ----------------------------------------------------
+
+    return cut_digit
+
+
+def padDigitImage(digit_image, digit_height, digit_width):
+
+    padded_digit = []
+
+    pad_lr = 0
+    pad_tb = 0
+    pad_lr_corr = 0  # correction padding
+    pad_tb_corr = 0  # correction padding
+
+    # calculate padding size left/right, top/bottom
+    if(digit_width > digit_height):
+        pad_lr = 0
+        pad_tb = int((digit_width - digit_height) / 2)
+        # int(...) rounds down so we may miss a pixel
+        if(digit_height + pad_tb * 2 < digit_width):
+            pad_tb_corr = 1
+    elif(digit_height > digit_width):
+        pad_lr = int((digit_height - digit_width) / 2)
+        pad_tb = 0
+        # int(...) rounds down so we may miss a pixel
+        if(digit_width + pad_lr * 2 < digit_height):
+            pad_lr_corr = 1
+
+    # pad digit image
+    padded_digit = cv2.copyMakeBorder(digit_image, pad_tb, pad_tb + pad_tb_corr,
+                                      pad_lr, pad_lr + pad_lr_corr, cv2.BORDER_CONSTANT, None, value=255)
+
+    # DEBUG ---------------------------
+    # cv2.imshow("padding", padded_digit)
+    # cv2.waitKey(0)
+    # ---------------------------------
+
+    return padded_digit
+
+
 def getDigitImages(grid, cell_height, cell_width):
 
     digit_images = []
@@ -107,110 +209,35 @@ def getDigitImages(grid, cell_height, cell_width):
     center_x = int(cell_width / 2)
     center_y = int(cell_height / 2)
 
-    threshold = 20
-    scan_border_x = int(center_x * 0.65)
-    scan_border_y = int(center_y * 0.65)
-
     for i in range(9):
         for j in range(9):
+            # TODO check if size of cells must be adjusted (center of lower cells get distorted)
             # cut out cells
             pt_x = cell_width * j
             pt_y = cell_height * i
             cell_image = grid[pt_y:pt_y +
                               cell_height, pt_x:pt_x + cell_width]
 
-            # check for emtpy cell and erase unwanted grid parts and center digit
-            # start scan at the center of the cell
-            # scan row to top/bottom with scan width of percentage of cell_width
-            # scan column to left/right with scan width of percentage of cell_height
-            # if sum of scan vector is less then threshold -> border found
+            digit_image = cutOutDigit(cell_image, center_x, center_y)
 
-            # scanned borders
-            row_top = center_y - scan_border_y # top edge of scan border on y axis
-            row_bottom = center_y + scan_border_y # bottom edge of scan border on y axis
-            col_left = center_x - scan_border_x # left edge of scan border on x axis
-            col_right = center_x + scan_border_x # right edge of scan border on x axis
-            scan_image = cv2.bitwise_not(cell_image)
-
-            top_b_found = False
-            bottom_b_found = False
-            left_b_found = False
-            right_b_found = False
-
-            for y in range(scan_border_y + 1):
-                # scan to top
-                if((not top_b_found) & (np.sum(scan_image[center_y - y, (center_x - scan_border_x):(center_x + scan_border_x)]) < threshold)):
-                    row_top = center_y - y
-                    top_b_found = True
-                # scan to bottom
-                if((not bottom_b_found) & (np.sum(scan_image[center_y + y, (center_x - scan_border_x):(center_x + scan_border_x)]) < threshold)):
-                    row_bottom = center_y + y
-                    bottom_b_found = True
-                if(top_b_found & bottom_b_found):
-                    break
-
-            for x in range(scan_border_x + 1):
-                # scan to left
-                if((not left_b_found) & (np.sum(scan_image[(center_y - scan_border_y):(center_y + scan_border_y), center_x - x]) < threshold)):
-                    col_left = center_x - x
-                    left_b_found = True
-                # scan to right
-                if((not right_b_found) & (np.sum(scan_image[(center_y - scan_border_y):(center_y + scan_border_y), center_x + x]) < threshold)):
-                    col_right = center_x + x
-                    right_b_found = True
-                if(left_b_found & right_b_found):
-                    break
-
-            # non empty cell
-            if((row_top != center_y) & (row_bottom != center_y) & (col_left != center_x) & (col_right != center_x)):
-
-                # get bounded image of digit
-                digit_image = cell_image[row_top:row_bottom,
-                                         col_left:col_right]
-
+            # check if cell wasn't empty
+            if(len(digit_image) > 0):
                 # height and width of digit
-                digit_width = int(col_right - col_left)
-                digit_height = int(row_bottom - row_top)
+                digit_height, digit_width = digit_image.shape
 
-                pad_lr = 0
-                pad_tb = 0
-                pad_lr_corr = 0  # correction padding
-                pad_tb_corr = 0  # correction padding
+                padded_digit = padDigitImage(
+                    digit_image, digit_height, digit_width)
 
-                # calculate padding size left/right, top/bottom
-                if(digit_width > digit_height):
-                    pad_lr = 0
-                    pad_tb = int((digit_width - digit_height) / 2)
-                    # int(...) rounds down so we may miss a pixel
-                    if(digit_height + pad_tb * 2 < digit_width):
-                        pad_tb_corr = 1
-
-                elif(digit_height > digit_width):
-                    pad_lr = int((digit_height - digit_width) / 2)
-                    pad_tb = 0
-                    # int(...) rounds down so we may miss a pixel
-                    if(digit_width + pad_lr * 2 < digit_height):
-                        pad_lr_corr = 1
-
-                # pad digit image
-                padded_digit = cv2.copyMakeBorder(
-                    digit_image, pad_tb, pad_tb + pad_tb_corr, pad_lr, pad_lr + pad_lr_corr, cv2.BORDER_CONSTANT, None, value=255)
-
-                resized_digit = cv2.resize(
+                full_digit = cv2.resize(
                     padded_digit, (cell_width, cell_height))
 
-                # add digit image and its location on the sudoku grid to the list
-                digit_images.append((resized_digit, i, j))
-
-                # DEBUG ----------------------------------------------
-                # cv2.rectangle(cell_image, (col_left, row_top), (col_right, row_bottom), (0, 0, 0), 1)
-                # cv2.line(cell_image, (center_x, center_y - scan_border_y), (center_x, center_y + scan_border_y), (0, 0, 0), 1)
-                # cv2.line(cell_image, (center_x - scan_border_x, center_y), (center_x + scan_border_x, center_y), (0, 0, 0), 1)
-                # cv2.imshow("input", cv2.resize(cell_image, (100, 100)))
-                # print(row_top, row_bottom, col_left, col_right)
-                # cv2.imshow("scan", resized_digit)
+                # DEBUG ---------------------------
+                # cv2.imshow("full digit", full_digit)
                 # cv2.waitKey(0)
-                # ----------------------------------------------------
+                # ---------------------------------
+
+                # add digit image and its location on the sudoku grid to the list
+                digit_images.append((full_digit, i, j))
 
     # DEBUG ---------------------------------------
     # from classifier.numberClassifier import predict
