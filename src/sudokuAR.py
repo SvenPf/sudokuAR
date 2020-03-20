@@ -172,46 +172,56 @@ def getDigitImages(grid, cell_height, cell_width):
                 digit_width = int(col_right - col_left)
                 digit_height = int(row_bottom - row_top)
 
-                # calculate padding size left/right, top/bottom
-                pad_lr = int((cell_width - digit_width) / 2)
-                pad_tb = int((cell_height - digit_height) / 2)
+                pad_lr = 0
+                pad_tb = 0
+                pad_lr_corr = 0  # correction padding
+                pad_tb_corr = 0  # correction padding
 
-                # int(...) may round down so we need to add the lost pixel
-                pad_lr_correction = cell_width - (digit_width + pad_lr * 2)
-                pad_tb_correction = cell_height - (digit_height + pad_tb * 2)
+                # calculate padding size left/right, top/bottom
+                if(digit_width > digit_height):
+                    pad_lr = 0
+                    pad_tb = int((digit_width - digit_height) / 2)
+                    # int(...) rounds down so we may miss a pixel
+                    if(digit_height + pad_tb * 2 < digit_width):
+                        pad_tb_corr = 1
+
+                elif(digit_height > digit_width):
+                    pad_lr = int((digit_height - digit_width) / 2)
+                    pad_tb = 0
+                    # int(...) rounds down so we may miss a pixel
+                    if(digit_width + pad_lr * 2 < digit_height):
+                        pad_lr_corr = 1
 
                 # pad digit image
-                padded_digit = cv2.copyMakeBorder(digit_image, pad_tb, pad_tb + pad_tb_correction,
-                                                  pad_lr, pad_lr + pad_lr_correction, cv2.BORDER_CONSTANT, None, value=255)
+                padded_digit = cv2.copyMakeBorder(
+                    digit_image, pad_tb, pad_tb + pad_tb_corr, pad_lr, pad_lr + pad_lr_corr, cv2.BORDER_CONSTANT, None, value=255)
+
+                resized_digit = cv2.resize(
+                    padded_digit, (cell_width, cell_height))
 
                 # add digit image and its location on the sudoku grid to the list
-                digit_images.append((padded_digit, i, j))
+                digit_images.append((resized_digit, i, j))
 
                 # DEBUG ----------------------------------------------
+                # cv2.rectangle(cell_image, (col_left, row_top), (col_right, row_bottom), (0, 0, 0), 1)
+                # cv2.line(cell_image, (center_x, center_y - scan_border_y), (center_x, center_y + scan_border_y), (0, 0, 0), 1)
+                # cv2.line(cell_image, (center_x - scan_border_x, center_y), (center_x + scan_border_x, center_y), (0, 0, 0), 1)
+                # cv2.imshow("input", cv2.resize(cell_image, (100, 100)))
                 # print(row_top, row_bottom, col_left, col_right)
-                # cv2.imshow("input", scan_image)
-                # cv2.waitKey(0)
-                # print(padded_digit.shape)
-                # cv2.imshow("scan", padded_digit)
+                # cv2.imshow("scan", resized_digit)
                 # cv2.waitKey(0)
                 # ----------------------------------------------------
 
     # DEBUG ---------------------------------------
-    from classifier.numberClassifier import predict
+    # from classifier.numberClassifier import predict
 
-    for (digit_image, i, j) in digit_images:
-        print(predict(digit_image))
-        cv2.imshow("prediction", digit_image)
-        cv2.waitKey(0)
+    # for (digit_image, i, j) in digit_images:
+    #     print(predict(digit_image))
+    #     cv2.imshow("prediction", digit_image)
+    #     cv2.waitKey(0)
     # ---------------------------------------------
 
     return digit_images
-
-
-def resize(image, fx, fy):
-    # scale image
-    return cv2.resize(image, None, fx=fx, fy=fy,
-                      interpolation=cv2.INTER_CUBIC)
 
 
 def main():
