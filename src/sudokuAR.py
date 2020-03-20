@@ -105,13 +105,80 @@ def getCellImages(grid, cell_height, cell_width):
     # empty cell images
     cell_images = np.zeros((9, 9, cell_height, cell_width), dtype="uint8")
 
+    center_x = int(cell_width / 2)
+    center_y = int(cell_height / 2)
+
+    threshold = 50
+    scan_border_x = int(center_x * 0.65)
+    scan_border_y = int(center_y * 0.65)
+
     for i in range(9):
         for j in range(9):
             # cut out cells
             pt_x = cell_width * j
             pt_y = cell_height * i
-            cell_images[i][j] = grid[pt_y:pt_y +
+            cell_image = grid[pt_y:pt_y +
                                      cell_height, pt_x:pt_x + cell_width]
+
+            # check for emtpy cell and erase unwanted grid parts and center digit
+            # start scan at the center of the cell
+            # scan row to top/bottom with scan width of percentage of cell_width
+            # scan column to left/right with scan width of percentage of cell_height
+            # if sum of scan vector is less then threshold -> border found
+
+            # scanned borders
+            row_top = 0
+            row_bottom = cell_height
+            col_left = 0
+            col_right = cell_width
+            scan_image = cv2.bitwise_not(cell_image)
+
+            for y in range(scan_border_y + 1):
+                # scan to top
+                if((row_top == 0) & (np.sum(scan_image[center_y - y, (center_x - scan_border_x):(center_x + scan_border_x)]) < threshold)):
+                    row_top = center_y - y
+                # scan to bottom
+                if((row_bottom == cell_height) & (np.sum(scan_image[center_y + y, (center_x - scan_border_x):(center_x + scan_border_x)]) < threshold)):
+                    row_bottom = center_y + y
+                if((row_top != 0) & (row_bottom != cell_height)):
+                    break
+
+            for x in range(scan_border_x + 1):
+                #scan to left
+                if((col_left == 0) & (np.sum(scan_image[(center_y - scan_border_y):(center_y + scan_border_y), center_x - x]) < threshold)):
+                    col_left = center_x - x
+                #scan to right
+                if((col_right == cell_width) & (np.sum(scan_image[(center_y - scan_border_y):(center_y + scan_border_y), center_x + x]) < threshold)):
+                    col_right = center_x + x
+                if((col_left != 0) & (col_right != cell_width)):
+                    break
+
+            # empty cell
+            if((row_top == center_y) & (row_bottom == center_y) & (col_left == center_x) & (col_right == center_x)):
+                cell_images[i][j] = np.zeros(cell_image.shape, dtype=np.uint8)
+            else:
+                # fill image of digit
+                cell_images[i][j] = cell_image
+
+                # DEBUG ----------------------------------------------
+                # print(row_top, row_bottom, col_left, col_right)
+                # cv2.imshow("scan", scan_image)
+                # cv2.waitKey(0)
+
+                # cv2.imshow("input", cell_image[row_top:row_bottom, col_left:col_right])
+                # cv2.waitKey(0)
+                # ----------------------------------------------------
+
+    # DEBUG ---------------------------------------
+    # from classifier.numberClassifier import predict
+
+    # for i in range(9):
+    #     for j in range(9):
+    #         print(predict(cell_images[i][j]))
+    #         cv2.imshow("test", cell_images[i][j])
+    #         cv2.waitKey(0)
+    # ---------------------------------------------
+
 
     return cell_images
 
