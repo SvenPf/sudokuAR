@@ -113,7 +113,7 @@ def cutOutDigit(cell_image, center_x, center_y):
 
     cut_digit = []
 
-    threshold = 20
+    threshold = 150
     scan_border_x = int(center_x * 0.65)
     scan_border_y = int(center_y * 0.65)
 
@@ -270,8 +270,8 @@ def run(capture_device):
         ret, frame = capture.read()
 
         if ret == False:
-            print('Problem with capture device')
-            cv2.waitKey(0)  # delete for video feed
+            print('Problem with capture device (press any key to close)')
+            cv2.waitKey(0)
             sys.exit(1)
 
         # show webcam frame
@@ -285,12 +285,6 @@ def run(capture_device):
 
         digit_images = getDigitImages(sudoku_grid, int(
             SUDOKU_GRID_HEIGHT / 9), int(SUDOKU_GRID_WIDTH / 9))
-
-        # show all cell images
-        # for i in range(9):
-        #     for j in range(9):
-        #         cv2.imshow(str(i) + "," + str(j), cell_images[i][j])
-        #         cv2.resizeWindow(str(i) + "," + str(j), 200, 200)
 
         # wait 1 ms or quit if 'q' is pressed
         if cv2.waitKey(1) & 0xFF == ord('q'):
