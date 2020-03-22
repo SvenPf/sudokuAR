@@ -11,7 +11,7 @@ CATEGORIES = [1, 2, 3, 4, 5, 6, 7, 8, 9]  # possible numbers on sudoku grid
 SAMPLENAMES = ["Sample0" + str("%.2d" % (i+1))
                for i in CATEGORIES]  # names of directories
 
-IMG_SIZE = 50
+IMG_SIZE = 28
 
 
 def createTrainingData():
