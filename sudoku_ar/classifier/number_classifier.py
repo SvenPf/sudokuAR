@@ -4,23 +4,29 @@
 import pickle
 import numpy as np
 import cv2
-from sudoku_ar.dictionary.locations import X_TRAIN_DATA, Y_TRAIN_DATA, MODEL_DIR
+from sudoku_ar.dictionary.locations import X_TRAIN_DATA, Y_TRAIN_DATA, MODEL_DIR, LOG_DIR
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten
 from tensorflow.keras.layers import Conv2D, MaxPooling2D
-
-# because of error with gpu
+from tensorflow.keras.callbacks import TensorBoard
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
+
+
+# because of error with gpu
 config = ConfigProto()
 config.gpu_options.allow_growth = True
 session = InteractiveSession(config=config)
 
-MODEL = MODEL_DIR + "num_classifier.model"
+MODEL_NAME = "num_classifier.model"
+LOG = LOG_DIR / MODEL_NAME
+MODEL = MODEL_DIR / MODEL_NAME
+
 IMG_SIZE = 28
 BATCH_SIZE = 16
 NUM_CLASSES = 9
 EPOCHS = 12
+SPLIT = 0.1  # validation split
 
 
 def prepare(input_train_set):
@@ -35,6 +41,8 @@ def train():
 
     # similar model to mnist model proposed by F. Chollet to deal with handwritten numbers
     # https://github.com/keras-team/keras/blob/master/examples/mnist_cnn.py
+
+    tensorboard = TensorBoard(log_dir=LOG)
 
     pickle_in = open(X_TRAIN_DATA, "rb")
     x_train = pickle.load(pickle_in)
@@ -74,16 +82,18 @@ def train():
                   optimizer='adam',  # Adadelta
                   metrics=['accuracy'])
 
-    model.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=EPOCHS, validation_split=0.1)
+    model.fit(x_train, y_train, batch_size=BATCH_SIZE,
+              epochs=EPOCHS, validation_split=SPLIT, callbacks=[tensorboard])
 
-    print("Saving model in " + MODEL)
-    model.save(MODEL)
+    print("Saving model in " / MODEL)
+    model.save(str(MODEL))  # save does not support pathlib paths
 
 
 def predict(image):
     # returns predicted number and the related confidence
 
-    new_model = load_model(MODEL)
+    # load_model does not support pathlib paths
+    new_model = load_model(str(MODEL))
 
     resized = cv2.resize(image, (IMG_SIZE, IMG_SIZE))
 
@@ -92,4 +102,3 @@ def predict(image):
     predicted_class = np.argmax(predictions)
 
     return (predicted_class + 1), predictions[0][predicted_class]
-

@@ -260,8 +260,6 @@ def run(capture_device):
 
     # get webcam feed
     capture = cv2.VideoCapture(capture_device)
-    # capture = cv2.VideoCapture(
-    #     'https://test:test123@192.168.178.70:8080/video')
 
     # check if feed could be captured
     if not capture.isOpened():

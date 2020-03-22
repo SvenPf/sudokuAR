@@ -2,6 +2,7 @@
 .vscode
 sudoku_ar/resources
 sudoku_ar/classifier/model
+sudoku_ar/classifier/logs
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

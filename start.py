@@ -1,17 +1,18 @@
 # Run with Python 3.7
 
 import sys
-import os
-
+from pathlib import Path
 import sudoku_ar.app as app
 
-PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__)) + "/"
+
+PROJECT_ROOT = Path(__file__).parent.absolute()
 
 if(len(sys.argv) == 1):
     app.run("https://test:test123@192.168.178.70:8080/video")
 elif(len(sys.argv) == 2):
     if(str(sys.argv[1]) == "-ph"):
-        app.run(PROJECT_ROOT + "sudoku_ar/resources/photo.jpg")
+        # cv2.imread does not support pathlib paths
+        app.run(str(PROJECT_ROOT / "sudoku_ar/resources/photo.jpg"))
     elif(str(sys.argv[1]) == "-train"):
         import sudoku_ar.classifier.number_classifier as classifier
         classifier.train()
