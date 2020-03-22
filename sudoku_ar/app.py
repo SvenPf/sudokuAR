@@ -3,8 +3,6 @@ import cv2
 import numpy as np
 from matplotlib import pyplot as plt
 
-DATADIR = "../data/"
-
 
 def getHoughLines(image):
 
@@ -21,6 +19,10 @@ def getHoughLines(image):
             x1, y1, x2, y2 = line[0]
             # draw white line
             cv2.line(hough_lines, (x1, y1), (x2, y2), (255, 255, 255), 2)
+
+    # DEBUG ---------------
+    # cv2.imshow("hough lines", hough_lines)
+    # ---------------------
 
     return hough_lines
 
@@ -75,12 +77,12 @@ def getSudokuGrid(image, height, width):
     blur = cv2.GaussianBlur(grey, (5, 5), 0)
     # adaptive thresholding
     threshold = cv2.adaptiveThreshold(
-        blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 2)
+        blur.copy(), 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 2)
     # invert black/white so that contours are white
     invert = cv2.bitwise_not(threshold)
 
     # maybe better than adaptive thresholding
-    # edges = cv2.Canny(gray, 50, 150, apertureSize=3)
+    # edge = cv2.Canny(grey, 50, 150, apertureSize=3)
 
     hough_lines = getHoughLines(invert)
     max_rectangle = getMaxRectangle(hough_lines)
@@ -100,6 +102,7 @@ def getSudokuGrid(image, height, width):
     return warp
 
 
+# TODO maybe centering then floodfill from sides is better ?!
 def cutOutDigit(cell_image, center_x, center_y):
     # expects thresholded cell_image
     # check for emtpy cell and erase unwanted grid parts and center digit
@@ -179,14 +182,12 @@ def padDigitImage(digit_image, digit_height, digit_width):
 
     # calculate padding size left/right, top/bottom
     if(digit_width > digit_height):
-        pad_lr = 0
         pad_tb = int((digit_width - digit_height) / 2)
         # int(...) rounds down so we may miss a pixel
         if(digit_height + pad_tb * 2 < digit_width):
             pad_tb_corr = 1
     elif(digit_height > digit_width):
         pad_lr = int((digit_height - digit_width) / 2)
-        pad_tb = 0
         # int(...) rounds down so we may miss a pixel
         if(digit_width + pad_lr * 2 < digit_height):
             pad_lr_corr = 1
@@ -241,7 +242,7 @@ def getDigitImages(grid, cell_height, cell_width):
                 digit_images.append((full_digit, i, j))
 
     # DEBUG ---------------------------------------
-    # from classifier.numberClassifier import predict
+    # from sudoku_ar.classifier.number_classifier import predict
 
     # for (digit_image, i, j) in digit_images:
     #     print(predict(digit_image))
@@ -252,13 +253,13 @@ def getDigitImages(grid, cell_height, cell_width):
     return digit_images
 
 
-def main():
+def run(capture_device):
 
     SUDOKU_GRID_HEIGHT = 450
     SUDOKU_GRID_WIDTH = 450
 
     # get webcam feed
-    capture = cv2.VideoCapture(DATADIR + "photo.jpg", 0)
+    capture = cv2.VideoCapture(capture_device)
     # capture = cv2.VideoCapture(
     #     'https://test:test123@192.168.178.70:8080/video')
 
@@ -300,7 +301,3 @@ def main():
     # clean up
     capture.release()
     cv2.destroyAllWindows()
-
-
-if __name__ == "__main__":
-    main()

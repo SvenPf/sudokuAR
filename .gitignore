@@ -1,7 +1,7 @@
 # Project related
 .vscode
-*.jpg
-data
+sudoku_ar/resources
+sudoku_ar/classifier/model
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
