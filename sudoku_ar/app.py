@@ -97,10 +97,10 @@ def getSudokuGrid(image, height, width):
 
     found_hough, hough_lines = getHoughLines(invert)
 
-    if(found_hough):
+    if found_hough:
         found_rec, max_rectangle = getMaxRectangle(hough_lines)
 
-        if(found_rec):
+        if found_rec:
             found = True
 
             # DEBUG : draw max rectangle -------------------
@@ -155,11 +155,11 @@ def cutOutDigit(cell_image, center_x, center_y):
 
     for y in range(scan_border_y + 1):
         # scan to top
-        if((not top_b_found) & (np.sum(scan_image[center_y - y, (center_x - scan_border_x):(center_x + scan_border_x)]) < threshold)):
+        if (not top_b_found) & (np.sum(scan_image[center_y - y, (center_x - scan_border_x):(center_x + scan_border_x)]) < threshold):
             row_top = center_y - y
             top_b_found = True
         # scan to bottom
-        if((not bottom_b_found) & (np.sum(scan_image[center_y + y, (center_x - scan_border_x):(center_x + scan_border_x)]) < threshold)):
+        if (not bottom_b_found) & (np.sum(scan_image[center_y + y, (center_x - scan_border_x):(center_x + scan_border_x)]) < threshold):
             row_bottom = center_y + y
             bottom_b_found = True
         if(top_b_found & bottom_b_found):
@@ -167,18 +167,18 @@ def cutOutDigit(cell_image, center_x, center_y):
 
     for x in range(scan_border_x + 1):
         # scan to left
-        if((not left_b_found) & (np.sum(scan_image[(center_y - scan_border_y):(center_y + scan_border_y), center_x - x]) < threshold)):
+        if (not left_b_found) & (np.sum(scan_image[(center_y - scan_border_y):(center_y + scan_border_y), center_x - x]) < threshold):
             col_left = center_x - x
             left_b_found = True
         # scan to right
-        if((not right_b_found) & (np.sum(scan_image[(center_y - scan_border_y):(center_y + scan_border_y), center_x + x]) < threshold)):
+        if (not right_b_found) & (np.sum(scan_image[(center_y - scan_border_y):(center_y + scan_border_y), center_x + x]) < threshold):
             col_right = center_x + x
             right_b_found = True
-        if(left_b_found & right_b_found):
+        if left_b_found & right_b_found:
             break
 
     # non empty cell
-    if((row_top != center_y) & (row_bottom != center_y) & (col_left != center_x) & (col_right != center_x)):
+    if (row_top != center_y) & (row_bottom != center_y) & (col_left != center_x) & (col_right != center_x):
         # get bounded image of digit
         cut_digit = cell_image[row_top:row_bottom, col_left:col_right]
 
@@ -203,15 +203,15 @@ def padDigitImage(digit_image, digit_height, digit_width):
     pad_tb_corr = 0  # correction padding
 
     # calculate padding size left/right, top/bottom
-    if(digit_width > digit_height):
+    if digit_width > digit_height:
         pad_tb = int((digit_width - digit_height) / 2)
         # int(...) rounds down so we may miss a pixel
-        if(digit_height + pad_tb * 2 < digit_width):
+        if digit_height + pad_tb * 2 < digit_width:
             pad_tb_corr = 1
-    elif(digit_height > digit_width):
+    elif digit_height > digit_width:
         pad_lr = int((digit_height - digit_width) / 2)
         # int(...) rounds down so we may miss a pixel
-        if(digit_width + pad_lr * 2 < digit_height):
+        if digit_width + pad_lr * 2 < digit_height:
             pad_lr_corr = 1
 
     # pad digit image
@@ -245,7 +245,7 @@ def getDigitImages(grid, cell_height, cell_width):
             digit_image = cutOutDigit(cell_image, center_x, center_y)
 
             # check if cell wasn't empty
-            if(len(digit_image) > 0):
+            if len(digit_image) > 0:
                 # height and width of digit
                 digit_height, digit_width = digit_image.shape
 
