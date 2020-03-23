@@ -199,13 +199,11 @@ def padDigitImage(digit_image, digit_height, digit_width):
     if digit_width > digit_height:
         pad_tb = int((digit_width - digit_height) / 2)
         # int(...) rounds down so we may miss a pixel
-        if digit_height + pad_tb * 2 < digit_width:
-            pad_tb_corr = 1
+        pad_tb_corr = digit_width - (digit_height + pad_tb * 2)
     elif digit_height > digit_width:
         pad_lr = int((digit_height - digit_width) / 2)
         # int(...) rounds down so we may miss a pixel
-        if digit_width + pad_lr * 2 < digit_height:
-            pad_lr_corr = 1
+        pad_lr_corr = digit_height - (digit_width + pad_lr * 2)
 
     # pad digit image
     padded_digit = cv2.copyMakeBorder(digit_image, pad_tb, pad_tb + pad_tb_corr,
