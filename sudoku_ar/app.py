@@ -2,6 +2,7 @@ import sys
 import cv2
 import numpy as np
 from matplotlib import pyplot as plt
+from sudoku_ar.classifier.number_classifier import predict
 
 
 def getHoughLines(image):
@@ -241,13 +242,25 @@ def getDigitImages(grid, cell_height, cell_width):
                 # add digit image and its location on the sudoku grid to the list
                 digit_images.append((full_digit, i, j))
 
-    # DEBUG ---------------------------------------
-    # from sudoku_ar.classifier.number_classifier import predict
+    # DEBUG : show predicted numbers ---------------
+    if(len(digit_images) > 0):
+        text_height = 30
+        w_height = len(digit_images) * text_height
+        w_width = 200
+        y_pos = int(text_height / 2)
+        win = np.zeros((w_height, w_width), np.uint8)
 
-    # for (digit_image, i, j) in digit_images:
-    #     print(predict(digit_image))
-    #     cv2.imshow("prediction", digit_image)
-    #     cv2.waitKey(0)
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 0.4
+        font_color = (255,255,255)
+
+        for (digit_image, i, j) in digit_images:
+            prediction = predict(digit_image)
+            text = "(" + str(i) + ", " + str(j) + ") " + str(prediction)
+            cv2.putText(win, text, (10, y_pos), font, font_scale, font_color)
+            y_pos += text_height
+
+        cv2.imshow("prediction", win)
     # ---------------------------------------------
 
     return digit_images
