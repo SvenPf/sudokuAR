@@ -8,12 +8,11 @@ from sudoku_ar.classifier.number_classifier import NumberClassifier
 def getHoughLines(image):
 
     found = False
+    # create blank black image with only one color channel
+    hough_lines = np.zeros(image.shape, dtype=np.uint8)
 
     # get hough transform
     lines = cv2.HoughLinesP(image, 1, np.pi/180, 50, minLineLength=5)
-
-    # create blank black image with only one color channel
-    hough_lines = np.zeros(image.shape, dtype=np.uint8)
 
     # check if any lines were found
     if lines is not None:
@@ -27,16 +26,14 @@ def getHoughLines(image):
         # DEBUG ---------------
         # cv2.imshow("hough lines", hough_lines)
         # ---------------------
-    else:
-        found = False
 
     return found, hough_lines
 
 
 def getMaxRectangle(image):
 
-    max_rectangle = np.zeros((4, 2), dtype="float32")
     found = False
+    max_rectangle = np.zeros((4, 2), dtype="float32")
 
     # get all contours in given image (contours must be white)
     contours, hierarchy = cv2.findContours(
@@ -101,7 +98,7 @@ def getSudokuGrid(image, height, width):
         found_rec, max_rectangle = getMaxRectangle(hough_lines)
 
         if found_rec:
-            found = True
+            found = True # Sudoku grid was probably found
 
             # DEBUG : draw max rectangle -------------------
             cv2.imshow('Max Area Rectangle', cv2.polylines(
@@ -116,10 +113,6 @@ def getSudokuGrid(image, height, width):
             perspective_trans = cv2.getPerspectiveTransform(
                 max_rectangle, reference_rectangle)
             warp = cv2.warpPerspective(threshold, perspective_trans, (width, height))
-        else:
-            found = False
-    else:
-        found = False
 
     return found, warp
 
@@ -309,6 +302,9 @@ def run(capture_device):
         digit_images = getDigitImages(sudoku_grid, int(
             SUDOKU_GRID_HEIGHT / 9), int(SUDOKU_GRID_WIDTH / 9))
 
+        # TODO predict digits, create sudoku grid as array, solve sudoku, reverse perspective transform solution
+        # TODO later probably needs parallelization
+
         # DEBUG : show predicted numbers ---------------
         if(len(digit_images) > 0):
             text_height = 30
@@ -318,14 +314,14 @@ def run(capture_device):
             win = np.zeros((w_height, w_width), np.uint8)
 
             font = cv2.FONT_HERSHEY_SIMPLEX
-            font_scale = 0.4
+            font_scale = 0.45
             font_color = (255, 255, 255)
 
             for (digit_image, i, j) in digit_images:
                 predictions = num_classifier.predict([digit_image])
                 text = "(" + str(i) + ", " + str(j) + ") " + \
                     str(predictions[0])
-                cv2.putText(win, text, (10, y_pos),
+                cv2.putText(win, text, (5, y_pos),
                             font, font_scale, font_color)
                 y_pos += text_height
 
