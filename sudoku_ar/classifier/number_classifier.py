@@ -72,7 +72,7 @@ def train():
     model.fit(x_train, y_train, batch_size=BATCH_SIZE,
               epochs=EPOCHS, validation_split=SPLIT, callbacks=[tensorboard])
 
-    print("Saving model in " / TEST_MODEL_PATH)
+    print("Saving model in " + str(TEST_MODEL_PATH))
     model.save(str(TEST_MODEL_PATH))  # save does not support pathlib paths
 
 

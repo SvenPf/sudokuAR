@@ -18,7 +18,8 @@ def createTrainingData():
 
     training_data = []
 
-    tar = tarfile.open(SAMPLES_TAR, "r:")
+    # can't handle pathlib paths
+    tar = tarfile.open(str(SAMPLES_TAR), "r:")
 
     # iterator for all members (directories, files) in tar
     iter_tar = iter(tar)
@@ -34,7 +35,7 @@ def createTrainingData():
               sample_name + " (Class " + str(label) + ")")
 
         while member:
-            # check if member is file and matching to current label
+            # check if member is a file and matching to current label
             if member.isfile() & (sample_name in os.path.dirname(member.name)):
                 # extract member (image) from tar
                 image = tar.extractfile(member).read()
@@ -75,13 +76,13 @@ def main():
     x_train = np.array(x_train).reshape(-1, IMG_SIZE, IMG_SIZE, 1)
 
     # save inputs
-    print("Saving set of inputs in " + X_TRAIN_DATA)
+    print("Saving set of inputs in " + str(X_TRAIN_DATA))
     pickle_out = open(X_TRAIN_DATA, "wb")
     pickle.dump(x_train, pickle_out)
     pickle_out.close()
 
     # save outputs
-    print("Saving set of labels in " + Y_TRAIN_DATA)
+    print("Saving set of labels in " + str(Y_TRAIN_DATA))
     pickle_out = open(Y_TRAIN_DATA, "wb")
     pickle.dump(y_train, pickle_out)
     pickle_out.close()

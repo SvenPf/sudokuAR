@@ -1,10 +1,10 @@
 from pathlib import Path
 
-FILE_DIR = Path(__file__).parent.absolute()
+SRC_DIR = Path(__file__).parent.parent.absolute()
 
 # General paths
-RESOURCES_DIR = FILE_DIR / "../resources/"
-CLASSIFIER_DIR = FILE_DIR / "../classifier/"
+RESOURCES_DIR = SRC_DIR / "resources/"
+CLASSIFIER_DIR = SRC_DIR / "classifier/"
 
 # Resource folder
 TRAIN_DATA_DIR = RESOURCES_DIR / "train_data/"
