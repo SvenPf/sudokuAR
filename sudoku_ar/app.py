@@ -7,6 +7,8 @@ from sudoku_ar.classifier.number_classifier import NumberClassifier
 
 def getHoughLines(image):
 
+    found = False
+
     # get hough transform
     lines = cv2.HoughLinesP(image, 1, np.pi/180, 50, minLineLength=5)
 
@@ -15,22 +17,26 @@ def getHoughLines(image):
 
     # check if any lines were found
     if lines is not None:
+        found = True
         # draw all found lines in source image
         for line in lines:
             x1, y1, x2, y2 = line[0]
             # draw white line
             cv2.line(hough_lines, (x1, y1), (x2, y2), (255, 255, 255), 2)
 
-    # DEBUG ---------------
-    # cv2.imshow("hough lines", hough_lines)
-    # ---------------------
+        # DEBUG ---------------
+        # cv2.imshow("hough lines", hough_lines)
+        # ---------------------
+    else:
+        found = False
 
-    return hough_lines
+    return found, hough_lines
 
 
 def getMaxRectangle(image):
 
     max_rectangle = np.zeros((4, 2), dtype="float32")
+    found = False
 
     # get all contours in given image (contours must be white)
     contours, hierarchy = cv2.findContours(
@@ -48,6 +54,7 @@ def getMaxRectangle(image):
 
         # rectangle needs only 4 points
         if len(poly_approx) >= 4:
+            found = True
             # convex hull for better approximation of rectangle
             hull = cv2.convexHull(poly_approx)
 
@@ -67,10 +74,13 @@ def getMaxRectangle(image):
             max_rectangle[1] = points[np.argmin(diff_of)]
             max_rectangle[3] = points[np.argmax(diff_of)]
 
-    return max_rectangle
+    return found, max_rectangle
 
 
 def getSudokuGrid(image, height, width):
+
+    found = False
+    warp = None
 
     # gray scale
     grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -78,31 +88,40 @@ def getSudokuGrid(image, height, width):
     blur = cv2.GaussianBlur(grey, (5, 5), 0)
     # adaptive thresholding
     threshold = cv2.adaptiveThreshold(
-        blur.copy(), 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 2)
+        blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 2)
     # invert black/white so that contours are white
     invert = cv2.bitwise_not(threshold)
 
     # maybe better than adaptive thresholding
     # edge = cv2.Canny(grey, 50, 150, apertureSize=3)
 
-    hough_lines = getHoughLines(invert)
-    max_rectangle = getMaxRectangle(hough_lines)
+    found_hough, hough_lines = getHoughLines(invert)
 
-    # DEBUG : draw max rectangle -------------------
-    cv2.imshow('Max Area Rectangle', cv2.polylines(
-        image.copy(), [np.int32(max_rectangle)], True, (0, 255, 0), 2))
-    # ----------------------------------------------
+    if(found_hough):
+        found_rec, max_rectangle = getMaxRectangle(hough_lines)
 
-    # rectangle if you look direcly from above
-    reference_rectangle = np.array(
-        [[0, 0], [width, 0], [width, height], [0, height]], dtype="float32")
+        if(found_rec):
+            found = True
 
-    # get inverse transformation of current prespectiv and apply it on given image
-    perspective_trans = cv2.getPerspectiveTransform(
-        max_rectangle, reference_rectangle)
-    warp = cv2.warpPerspective(threshold, perspective_trans, (width, height))
+            # DEBUG : draw max rectangle -------------------
+            cv2.imshow('Max Area Rectangle', cv2.polylines(
+                image.copy(), [np.int32(max_rectangle)], True, (0, 255, 0), 2))
+            # ----------------------------------------------
 
-    return warp
+            # rectangle if you look direcly from above
+            reference_rectangle = np.array(
+                [[0, 0], [width, 0], [width, height], [0, height]], dtype="float32")
+
+            # get inverse transformation of current prespectiv and apply it on given image
+            perspective_trans = cv2.getPerspectiveTransform(
+                max_rectangle, reference_rectangle)
+            warp = cv2.warpPerspective(threshold, perspective_trans, (width, height))
+        else:
+            found = False
+    else:
+        found = False
+
+    return found, warp
 
 
 # TODO maybe centering then floodfill from sides is better ?!
@@ -262,6 +281,11 @@ def run(capture_device):
         sys.exit(1)
 
     while True:
+
+        # wait 1 ms or quit if 'q' is pressed
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
         # get frame of webcam feed
         ret, frame = capture.read()
 
@@ -273,8 +297,11 @@ def run(capture_device):
         # show webcam frame
         cv2.imshow('Webcam', frame)
 
-        sudoku_grid = getSudokuGrid(
+        found_grid, sudoku_grid = getSudokuGrid(
             frame, SUDOKU_GRID_HEIGHT, SUDOKU_GRID_WIDTH)
+
+        if not found_grid:
+            continue
 
         # show converted frame
         cv2.imshow('Perspective Transformed', sudoku_grid)
@@ -292,20 +319,18 @@ def run(capture_device):
 
             font = cv2.FONT_HERSHEY_SIMPLEX
             font_scale = 0.4
-            font_color = (255,255,255)
+            font_color = (255, 255, 255)
 
             for (digit_image, i, j) in digit_images:
                 predictions = num_classifier.predict([digit_image])
-                text = "(" + str(i) + ", " + str(j) + ") " + str(predictions[0])
-                cv2.putText(win, text, (10, y_pos), font, font_scale, font_color)
+                text = "(" + str(i) + ", " + str(j) + ") " + \
+                    str(predictions[0])
+                cv2.putText(win, text, (10, y_pos),
+                            font, font_scale, font_color)
                 y_pos += text_height
 
             cv2.imshow("prediction", win)
         # ---------------------------------------------
-
-        # wait 1 ms or quit if 'q' is pressed
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
 
     # clean up
     capture.release()
