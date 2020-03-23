@@ -2,7 +2,7 @@ import sys
 import cv2
 import numpy as np
 from matplotlib import pyplot as plt
-from sudoku_ar.classifier.number_classifier import predict
+from sudoku_ar.classifier.number_classifier import NumberClassifier
 
 
 def getHoughLines(image):
@@ -87,9 +87,11 @@ def getSudokuGrid(image, height, width):
 
     hough_lines = getHoughLines(invert)
     max_rectangle = getMaxRectangle(hough_lines)
-    # draw max rectangle
+
+    # DEBUG : draw max rectangle -------------------
     cv2.imshow('Max Area Rectangle', cv2.polylines(
         image.copy(), [np.int32(max_rectangle)], True, (0, 255, 0), 2))
+    # ----------------------------------------------
 
     # rectangle if you look direcly from above
     reference_rectangle = np.array(
@@ -242,27 +244,6 @@ def getDigitImages(grid, cell_height, cell_width):
                 # add digit image and its location on the sudoku grid to the list
                 digit_images.append((full_digit, i, j))
 
-    # DEBUG : show predicted numbers ---------------
-    if(len(digit_images) > 0):
-        text_height = 30
-        w_height = len(digit_images) * text_height
-        w_width = 200
-        y_pos = int(text_height / 2)
-        win = np.zeros((w_height, w_width), np.uint8)
-
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 0.4
-        font_color = (255,255,255)
-
-        for (digit_image, i, j) in digit_images:
-            prediction = predict(digit_image)
-            text = "(" + str(i) + ", " + str(j) + ") " + str(prediction)
-            cv2.putText(win, text, (10, y_pos), font, font_scale, font_color)
-            y_pos += text_height
-
-        cv2.imshow("prediction", win)
-    # ---------------------------------------------
-
     return digit_images
 
 
@@ -270,6 +251,8 @@ def run(capture_device):
 
     SUDOKU_GRID_HEIGHT = 450
     SUDOKU_GRID_WIDTH = 450
+
+    num_classifier = NumberClassifier()
 
     # get webcam feed
     capture = cv2.VideoCapture(capture_device)
@@ -298,6 +281,27 @@ def run(capture_device):
 
         digit_images = getDigitImages(sudoku_grid, int(
             SUDOKU_GRID_HEIGHT / 9), int(SUDOKU_GRID_WIDTH / 9))
+
+        # DEBUG : show predicted numbers ---------------
+        if(len(digit_images) > 0):
+            text_height = 30
+            w_height = len(digit_images) * text_height
+            w_width = 200
+            y_pos = int(text_height / 2)
+            win = np.zeros((w_height, w_width), np.uint8)
+
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            font_scale = 0.4
+            font_color = (255,255,255)
+
+            for (digit_image, i, j) in digit_images:
+                predictions = num_classifier.predict([digit_image])
+                text = "(" + str(i) + ", " + str(j) + ") " + str(predictions[0])
+                cv2.putText(win, text, (10, y_pos), font, font_scale, font_color)
+                y_pos += text_height
+
+            cv2.imshow("prediction", win)
+        # ---------------------------------------------
 
         # wait 1 ms or quit if 'q' is pressed
         if cv2.waitKey(1) & 0xFF == ord('q'):

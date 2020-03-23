@@ -16,6 +16,7 @@ Y_TRAIN_DATA = TRAIN_DATA_DIR / "y_train.pickle"
 
 # Training
 MODEL_DIR = CLASSIFIER_DIR / "model/"
+TEST_MODEL_DIR = MODEL_DIR / "test/"
 LOG_DIR = CLASSIFIER_DIR / "logs/"
 
 # Generating

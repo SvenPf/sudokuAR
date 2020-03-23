@@ -1,10 +1,8 @@
-# import os
-# os.environ["CUDA_VISIBLE_DEVICES"]="-1"
-
 import pickle
 import numpy as np
 import cv2
-from sudoku_ar.dictionary.locations import X_TRAIN_DATA, Y_TRAIN_DATA, MODEL_DIR, LOG_DIR
+import time
+from sudoku_ar.dictionary.locations import X_TRAIN_DATA, Y_TRAIN_DATA, MODEL_DIR, TEST_MODEL_DIR, LOG_DIR
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten
 from tensorflow.keras.layers import Conv2D, MaxPooling2D
@@ -13,36 +11,25 @@ from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
 
 
-# because of error with gpu
-config = ConfigProto()
-config.gpu_options.allow_growth = True
-session = InteractiveSession(config=config)
-
-MODEL_NAME = "num_classifier.model"
-LOG = LOG_DIR / MODEL_NAME
-MODEL = MODEL_DIR / MODEL_NAME
-
 IMG_SIZE = 28
-BATCH_SIZE = 16
-NUM_CLASSES = 9
-EPOCHS = 12
-SPLIT = 0.1  # validation split
-
-
-def prepare(input_train_set):
-    # normalize pixels
-    input_train_set = input_train_set.astype('float32')
-    input_train_set /= 255
-    # reshap because tensorflow expects this shape
-    return np.array(input_train_set).reshape(-1, IMG_SIZE, IMG_SIZE, 1)
+CATEGORIES = [1, 2, 3, 4, 5, 6, 7, 8, 9]  # possible numbers on sudoku grid
 
 
 def train():
 
-    # similar model to mnist model proposed by F. Chollet to deal with handwritten numbers
+    TEST_MODEL_NAME = "num_classifier_{}.model".format(int(time.time()))
+    TEST_MODEL_PATH = TEST_MODEL_DIR / TEST_MODEL_NAME
+    LOG_PATH = LOG_DIR / TEST_MODEL_NAME
+
+    BATCH_SIZE = 16
+    NUM_CLASSES = len(CATEGORIES)
+    EPOCHS = 12
+    SPLIT = 0.3  # validation split
+
+    # similar to mnist model proposed by F. Chollet to deal with handwritten numbers
     # https://github.com/keras-team/keras/blob/master/examples/mnist_cnn.py
 
-    tensorboard = TensorBoard(log_dir=LOG)
+    tensorboard = TensorBoard(log_dir=LOG_PATH)
 
     pickle_in = open(X_TRAIN_DATA, "rb")
     x_train = pickle.load(pickle_in)
@@ -79,26 +66,57 @@ def train():
 
     # sparse_categorical_crossentropy for multiple classes with labels [0], [1], [2], [3], [4], [5], [6], [7], [8]
     model.compile(loss='sparse_categorical_crossentropy',
-                  optimizer='adam',  # Adadelta
+                  optimizer='adam',  # Adadelta or adam
                   metrics=['accuracy'])
 
     model.fit(x_train, y_train, batch_size=BATCH_SIZE,
               epochs=EPOCHS, validation_split=SPLIT, callbacks=[tensorboard])
 
-    print("Saving model in " / MODEL)
-    model.save(str(MODEL))  # save does not support pathlib paths
+    print("Saving model in " / TEST_MODEL_PATH)
+    model.save(str(TEST_MODEL_PATH))  # save does not support pathlib paths
 
 
-def predict(image):
-    # returns predicted number and the related confidence
+class NumberClassifier:
 
-    # load_model does not support pathlib paths
-    new_model = load_model(str(MODEL))
+    MODEL_NAME = "num_classifier.model"
+    MODEL_PATH = MODEL_DIR / MODEL_NAME
 
-    resized = cv2.resize(image, (IMG_SIZE, IMG_SIZE))
+    def __init__(self):
+        # load_model does not support pathlib paths
+        self.model = load_model(str(self.MODEL_PATH))
+        # change config because of error with gpu
+        config = ConfigProto()
+        config.gpu_options.allow_growth = True
+        session = InteractiveSession(config=config)
 
-    predictions = new_model.predict([prepare(resized)])
+    def __prepare(self, x_input_set):
 
-    predicted_class = np.argmax(predictions)
+        prepared_set = []
 
-    return (predicted_class + 1), predictions[0][predicted_class]
+        for x_input in x_input_set:
+            x_input = cv2.resize(x_input, (IMG_SIZE, IMG_SIZE))
+            # normalize pixels
+            x_input = x_input.astype('float32')
+            x_input /= 255
+            # reshape because keras expects this shape
+            # x_input = np.array(x_input)
+            x_input = x_input.reshape(-1, IMG_SIZE, IMG_SIZE, 1)
+            prepared_set.append(x_input)
+
+        return prepared_set
+
+    def predict(self, images):
+        # returns predicted number and the related confidence
+
+        predictions_list = []
+
+        # predict digit for all images
+        y_output_set = self.model.predict(self.__prepare(images))
+
+        for y_output in y_output_set:
+            predicted_class = np.argmax(y_output)
+            predicted_digit = CATEGORIES[predicted_class]
+            confidence = y_output[predicted_class]
+            predictions_list.append((predicted_digit, confidence))
+
+        return predictions_list
