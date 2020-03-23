@@ -13,6 +13,8 @@ SAMPLENAMES = ["Sample0" + str("%.2d" % (i+1))
 
 IMG_SIZE = 28
 
+PADS = [0, 1, 2, 3, 4, 5]
+
 
 def createTrainingData():
 
@@ -44,8 +46,11 @@ def createTrainingData():
                 # convert to opencv graysacle image
                 image_array = cv2.imdecode(image_np, cv2.IMREAD_GRAYSCALE)
 
-                image_array = cv2.resize(image_array, (IMG_SIZE, IMG_SIZE))
-                training_data.append([image_array, label])
+                for pad in PADS:
+                    padded_image = cv2.copyMakeBorder(
+                        image_array, pad, pad, pad, pad, cv2.BORDER_CONSTANT, None, value=255)
+                    resize = cv2.resize(padded_image, (IMG_SIZE, IMG_SIZE))
+                    training_data.append([resize, label])
 
                 member = next(iter_tar, None)  # next member
 

@@ -23,8 +23,8 @@ def train():
 
     BATCH_SIZE = 16
     NUM_CLASSES = len(CATEGORIES)
-    EPOCHS = 12
-    SPLIT = 0.3  # validation split
+    EPOCHS = 8
+    SPLIT = 0.2  # validation split
 
     # similar to mnist model proposed by F. Chollet to deal with handwritten numbers
     # https://github.com/keras-team/keras/blob/master/examples/mnist_cnn.py
