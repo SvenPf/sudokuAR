@@ -74,7 +74,7 @@ def getMaxRectangle(image):
     return found, max_rectangle
 
 
-def getSudokuGrid(image, height, width):
+def getSudokuGridImage(image, height, width):
 
     found = False
     warp = None
@@ -98,7 +98,7 @@ def getSudokuGrid(image, height, width):
         found_rec, max_rectangle = getMaxRectangle(hough_lines)
 
         if found_rec:
-            found = True # Sudoku grid was probably found
+            found = True  # Sudoku grid was probably found
 
             # DEBUG : draw max rectangle -------------------
             cv2.imshow('Max Area Rectangle', cv2.polylines(
@@ -112,7 +112,8 @@ def getSudokuGrid(image, height, width):
             # get inverse transformation of current prespectiv and apply it on given image
             perspective_trans = cv2.getPerspectiveTransform(
                 max_rectangle, reference_rectangle)
-            warp = cv2.warpPerspective(threshold, perspective_trans, (width, height))
+            warp = cv2.warpPerspective(
+                threshold, perspective_trans, (width, height))
 
     return found, warp
 
@@ -257,10 +258,51 @@ def getDigitImages(grid, cell_height, cell_width):
     return digit_images
 
 
+def getSudokuGridAsArray(num_classifier, digit_images, sudoku_shape):
+
+    assert(len(digit_images) > 0)
+
+    # empty sudoku grid
+    sudoku_array = np.zeros(sudoku_shape, np.uint8)
+
+    for (digit_image, i, j) in digit_images:
+        predicted_digit = num_classifier.predict([digit_image])[0][0]
+        sudoku_array[i, j] = predicted_digit
+
+    # DEBUG : show sudoku array --
+    # print(sudoku_array)
+    # ----------------------------
+
+    # DEBUG : show predicted numbers --------------
+    # text_height = 30
+    # w_height = len(digit_images) * text_height
+    # w_width = 200
+    # y_pos = int(text_height / 2)
+    # win = np.zeros((w_height, w_width), np.uint8)
+
+    # font = cv2.FONT_HERSHEY_SIMPLEX
+    # font_scale = 0.45
+    # font_color = (255, 255, 255)
+
+    # for (digit_image, i, j) in digit_images:
+    #     predictions = num_classifier.predict([digit_image])
+    #     text = "(" + str(i) + ", " + str(j) + ") " + \
+    #         str(predictions[0])
+    #     cv2.putText(win, text, (5, y_pos),
+    #                 font, font_scale, font_color)
+    #     y_pos += text_height
+
+    # cv2.imshow("prediction", win)
+    # ---------------------------------------------
+
+    return sudoku_array
+
+
 def run(capture_device):
 
     SUDOKU_GRID_HEIGHT = 450
     SUDOKU_GRID_WIDTH = 450
+    SUDOKU_SHAPE = (9, 9)
 
     num_classifier = NumberClassifier()
 
@@ -288,43 +330,23 @@ def run(capture_device):
         # show webcam frame
         cv2.imshow('Webcam', frame)
 
-        found_grid, sudoku_grid = getSudokuGrid(
+        found_grid, sudoku_grid_image = getSudokuGridImage(
             frame, SUDOKU_GRID_HEIGHT, SUDOKU_GRID_WIDTH)
 
         if not found_grid:
             continue
 
         # show converted frame
-        cv2.imshow('Perspective Transformed', sudoku_grid)
+        cv2.imshow('Perspective Transformed', sudoku_grid_image)
 
-        digit_images = getDigitImages(sudoku_grid, int(
-            SUDOKU_GRID_HEIGHT / 9), int(SUDOKU_GRID_WIDTH / 9))
+        digit_images = getDigitImages(sudoku_grid_image, int(
+            SUDOKU_GRID_HEIGHT / SUDOKU_SHAPE[0]), int(SUDOKU_GRID_WIDTH / SUDOKU_SHAPE[1]))
 
-        # TODO predict digits, create sudoku grid as array, solve sudoku, reverse perspective transform solution
-        # TODO later probably needs parallelization
-
-        # DEBUG : show predicted numbers ---------------
         if(len(digit_images) > 0):
-            text_height = 30
-            w_height = len(digit_images) * text_height
-            w_width = 200
-            y_pos = int(text_height / 2)
-            win = np.zeros((w_height, w_width), np.uint8)
-
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            font_scale = 0.45
-            font_color = (255, 255, 255)
-
-            for (digit_image, i, j) in digit_images:
-                predictions = num_classifier.predict([digit_image])
-                text = "(" + str(i) + ", " + str(j) + ") " + \
-                    str(predictions[0])
-                cv2.putText(win, text, (5, y_pos),
-                            font, font_scale, font_color)
-                y_pos += text_height
-
-            cv2.imshow("prediction", win)
-        # ---------------------------------------------
+            # TODO solve sudoku, reverse perspective transform solution
+            # TODO later probably needs parallelization
+            sudokug_grid_array = getSudokuGridAsArray(
+                num_classifier, digit_images, SUDOKU_SHAPE)
 
     # clean up
     capture.release()
