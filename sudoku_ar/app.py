@@ -267,35 +267,39 @@ def getSudokuGridAsArray(num_classifier, digit_images, sudoku_shape):
     # empty sudoku grid
     sudoku_array = np.zeros(sudoku_shape, np.uint8)
 
-    for (digit_image, i, j) in digit_images:
-        predicted_digit = num_classifier.predict([digit_image])[0][0]
-        sudoku_array[i, j] = predicted_digit
-
-    # DEBUG : show sudoku array --
-    # print(sudoku_array)
-    # ----------------------------
-
-    # DEBUG : show predicted numbers --------------
+    # DEBUG ----------------------------------------
     # text_height = 30
     # w_height = len(digit_images) * text_height
-    # w_width = 200
+    # w_width = 210
     # y_pos = int(text_height / 2)
     # win = np.zeros((w_height, w_width), np.uint8)
 
     # font = cv2.FONT_HERSHEY_SIMPLEX
     # font_scale = 0.45
     # font_color = (255, 255, 255)
+    # ----------------------------------------------
 
-    # for (digit_image, i, j) in digit_images:
+    for (digit_image, i, j) in digit_images:
+        predicted_digit = num_classifier.predict([digit_image])[0][0]
+        sudoku_array[i, j] = predicted_digit
+
+    # DEBUG ----------------------------------------
+    #     resize = cv2.resize(digit_image, (text_height - 2, text_height - 2))
+    #     y_offset = y_pos - int(text_height / 2)
+    #     win[y_offset + 1:y_offset + text_height - 1, 1:text_height - 1] = resize
     #     predictions = num_classifier.predict([digit_image])
     #     text = "(" + str(i) + ", " + str(j) + ") " + \
-    #         str(predictions[0])
-    #     cv2.putText(win, text, (5, y_pos),
+    #         str(predictions[0][0]) + " (" + str(predictions[0][1]) + ")"
+    #     cv2.putText(win, text, (text_height + 5, y_pos + 2),
     #                 font, font_scale, font_color)
     #     y_pos += text_height
 
     # cv2.imshow("prediction", win)
-    # ---------------------------------------------
+    # ----------------------------------------------
+
+    # DEBUG : show sudoku array --
+    # print(sudoku_array)
+    # ----------------------------
 
     return sudoku_array
 
@@ -384,8 +388,11 @@ def run(capture_device):
                 height, width, _ = frame.shape
                 wraped_solved_sudoku_image = cv2.warpPerspective(
                     solved_sudoku_image, transform, (width, height), flags=cv2.WARP_INVERSE_MAP)
-                
-                cv2.imshow("Webcam", cv2.addWeighted(frame, 0.8, wraped_solved_sudoku_image, 0.5, 0.0))
+
+                cv2.imshow("Webcam", cv2.addWeighted(
+                    frame, 0.8, wraped_solved_sudoku_image, 0.5, 0.0))
+
+        # TODO check if new Sudoku grid was found, otherwise show old sudoku solution (only calculate it once!)
 
     # clean up
     capture.release()
