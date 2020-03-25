@@ -79,6 +79,7 @@ def getSudokuGridImage(image, height, width):
 
     found = False
     warp = None
+    perspective_trans = None
 
     # gray scale
     grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -116,7 +117,7 @@ def getSudokuGridImage(image, height, width):
             warp = cv2.warpPerspective(
                 threshold, perspective_trans, (width, height))
 
-    return found, warp
+    return found, warp, perspective_trans
 
 
 # TODO maybe centering then floodfill from sides is better ?!
@@ -299,6 +300,31 @@ def getSudokuGridAsArray(num_classifier, digit_images, sudoku_shape):
     return sudoku_array
 
 
+def convert_to_image(sudoku_grid_array, height, width, grid_shape):
+
+    cell_height = int(height / grid_shape[0])
+    cell_width = int(width / grid_shape[1])
+    padding_x = int(cell_width * 0.3)
+    padding_y = int(cell_height * 0.3)
+
+    image = np.zeros((height, width, 3), np.uint8)
+
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    font_scale = 0.8
+    font_color = (0, 255, 0)
+
+    for i in range(grid_shape[0]):
+        for j in range(grid_shape[1]):
+            digit = sudoku_grid_array[i][j]
+            if digit > 0:
+                y_start = cell_height * (i + 1) - padding_y
+                x_start = cell_width * j + padding_x
+                cv2.putText(image, str(digit), (x_start, y_start),
+                            font, font_scale, font_color, 2)
+
+    return image
+
+
 def run(capture_device):
 
     SUDOKU_GRID_HEIGHT = 450
@@ -326,21 +352,21 @@ def run(capture_device):
         ret, frame = capture.read()
 
         if ret == False:
-            print('Problem with capture device (press any key to close)')
+            print("Problem with capture device (press any key to close)")
             cv2.waitKey(0)
             sys.exit(1)
 
         # show webcam frame
-        cv2.imshow('Webcam', frame)
+        cv2.imshow("Webcam", frame)
 
-        found_grid, sudoku_grid_image = getSudokuGridImage(
+        found_grid, sudoku_grid_image, transform = getSudokuGridImage(
             frame, SUDOKU_GRID_HEIGHT, SUDOKU_GRID_WIDTH)
 
         if not found_grid:
             continue
 
         # show converted frame
-        cv2.imshow('Perspective Transformed', sudoku_grid_image)
+        cv2.imshow("Perspective Transformed", sudoku_grid_image)
 
         digit_images = getDigitImages(sudoku_grid_image, int(
             SUDOKU_GRID_HEIGHT / SUDOKU_SHAPE[0]), int(SUDOKU_GRID_WIDTH / SUDOKU_SHAPE[1]))
@@ -351,9 +377,15 @@ def run(capture_device):
 
             solved_sudoku = sudoku_solver.solve_array(sudoku_grid_array)
 
-            if solved_sudoku:
-                # TODO reverse perspective transform solution
-                print(solved_sudoku)
+            if len(solved_sudoku) > 0:
+                solved_sudoku_image = convert_to_image(
+                    solved_sudoku - sudoku_grid_array, SUDOKU_GRID_HEIGHT, SUDOKU_GRID_HEIGHT, SUDOKU_SHAPE)
+
+                height, width, _ = frame.shape
+                wraped_solved_sudoku_image = cv2.warpPerspective(
+                    solved_sudoku_image, transform, (width, height), flags=cv2.WARP_INVERSE_MAP)
+                
+                cv2.imshow("Webcam", cv2.addWeighted(frame, 0.8, wraped_solved_sudoku_image, 0.5, 0.0))
 
     # clean up
     capture.release()

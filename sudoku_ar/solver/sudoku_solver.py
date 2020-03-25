@@ -127,8 +127,6 @@ class SudokuSolver:
 
         grid_array = []
 
-        print(values)
-
         for square in values:
             grid_array.append(int(values[square]))
 
@@ -152,6 +150,6 @@ class SudokuSolver:
         values = self.__solve(grid)
 
         if not self.__solved(values):
-            return False
+            return []
 
         return self.__convert_to_array(values)
