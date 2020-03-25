@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 from matplotlib import pyplot as plt
 from sudoku_ar.classifier.number_classifier import NumberClassifier
+from sudoku_ar.solver.sudoku_solver import SudokuSolver
 
 
 def getHoughLines(image):
@@ -305,6 +306,7 @@ def run(capture_device):
     SUDOKU_SHAPE = (9, 9)
 
     num_classifier = NumberClassifier()
+    sudoku_solver = SudokuSolver()
 
     # get webcam feed
     capture = cv2.VideoCapture(capture_device)
@@ -314,6 +316,7 @@ def run(capture_device):
         sys.exit(1)
 
     while True:
+        # TODO later probably needs parallelization
 
         # wait 1 ms or quit if 'q' is pressed
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -343,10 +346,14 @@ def run(capture_device):
             SUDOKU_GRID_HEIGHT / SUDOKU_SHAPE[0]), int(SUDOKU_GRID_WIDTH / SUDOKU_SHAPE[1]))
 
         if(len(digit_images) > 0):
-            # TODO solve sudoku, reverse perspective transform solution
-            # TODO later probably needs parallelization
-            sudokug_grid_array = getSudokuGridAsArray(
+            sudoku_grid_array = getSudokuGridAsArray(
                 num_classifier, digit_images, SUDOKU_SHAPE)
+
+            solved_sudoku = sudoku_solver.solve_array(sudoku_grid_array)
+
+            if solved_sudoku:
+                # TODO reverse perspective transform solution
+                print(solved_sudoku)
 
     # clean up
     capture.release()
