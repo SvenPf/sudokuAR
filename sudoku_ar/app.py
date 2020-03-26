@@ -103,8 +103,8 @@ def getSudokuGridImage(image, height, width):
             found = True  # Sudoku grid was probably found
 
             # DEBUG : draw max rectangle -------------------
-            cv2.imshow('Max Area Rectangle', cv2.polylines(
-                image.copy(), [np.int32(max_rectangle)], True, (0, 255, 0), 2))
+            # cv2.imshow('Max Area Rectangle', cv2.polylines(
+            #     image.copy(), [np.int32(max_rectangle)], True, (0, 255, 0), 2))
             # ----------------------------------------------
 
             # rectangle if you look direcly from above
@@ -193,6 +193,7 @@ def padDigitImage(digit_image, digit_height, digit_width):
 
     padded_digit = []
 
+    extra_pad = 2
     pad_lr = 0
     pad_tb = 0
     pad_lr_corr = 0  # correction padding
@@ -209,8 +210,8 @@ def padDigitImage(digit_image, digit_height, digit_width):
         pad_lr_corr = digit_height - (digit_width + pad_lr * 2)
 
     # pad digit image
-    padded_digit = cv2.copyMakeBorder(digit_image, pad_tb, pad_tb + pad_tb_corr,
-                                      pad_lr, pad_lr + pad_lr_corr, cv2.BORDER_CONSTANT, None, value=255)
+    padded_digit = cv2.copyMakeBorder(digit_image, pad_tb + extra_pad, pad_tb + pad_tb_corr + extra_pad,
+                                      pad_lr + extra_pad, pad_lr + pad_lr_corr + extra_pad, cv2.BORDER_CONSTANT, value=255)
 
     # DEBUG ---------------------------
     # cv2.imshow("padding", padded_digit)
@@ -267,7 +268,7 @@ def getSudokuGridAsArray(num_classifier, digit_images, sudoku_shape):
     # empty sudoku grid
     sudoku_array = np.zeros(sudoku_shape, np.uint8)
 
-    # DEBUG ----------------------------------------
+    # DEBUG :1 show all detected digit and their prediction --
     # text_height = 30
     # w_height = len(digit_images) * text_height
     # w_width = 210
@@ -277,13 +278,13 @@ def getSudokuGridAsArray(num_classifier, digit_images, sudoku_shape):
     # font = cv2.FONT_HERSHEY_SIMPLEX
     # font_scale = 0.45
     # font_color = (255, 255, 255)
-    # ----------------------------------------------
+    # --------------------------------------------------------
 
     for (digit_image, i, j) in digit_images:
         predicted_digit = num_classifier.predict([digit_image])[0][0]
         sudoku_array[i, j] = predicted_digit
 
-    # DEBUG ----------------------------------------
+    # DEBUG :2 show all detected digit and their prediction -----------------------
     #     resize = cv2.resize(digit_image, (text_height - 2, text_height - 2))
     #     y_offset = y_pos - int(text_height / 2)
     #     win[y_offset + 1:y_offset + text_height - 1, 1:text_height - 1] = resize
@@ -295,7 +296,7 @@ def getSudokuGridAsArray(num_classifier, digit_images, sudoku_shape):
     #     y_pos += text_height
 
     # cv2.imshow("prediction", win)
-    # ----------------------------------------------
+    # ------------------------------------------------------------------------------
 
     # DEBUG : show sudoku array --
     # print(sudoku_array)
@@ -389,7 +390,7 @@ def run(capture_device):
                 wraped_solved_sudoku_image = cv2.warpPerspective(
                     solved_sudoku_image, transform, (width, height), flags=cv2.WARP_INVERSE_MAP)
 
-                cv2.imshow("Webcam", cv2.addWeighted(
+                cv2.imshow("Solution", cv2.addWeighted(
                     frame, 0.8, wraped_solved_sudoku_image, 0.5, 0.0))
 
         # TODO check if new Sudoku grid was found, otherwise show old sudoku solution (only calculate it once!)
