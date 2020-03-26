@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 import time
 from sudoku_ar.dictionary.locations import X_TRAIN_DATA, Y_TRAIN_DATA, MODEL_DIR, TEST_MODEL_DIR, LOG_DIR
+from tensorflow.keras import optimizers
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten
 from tensorflow.keras.layers import Conv2D, MaxPooling2D
@@ -23,7 +24,7 @@ def train():
 
     BATCH_SIZE = 16
     NUM_CLASSES = len(CATEGORIES)
-    EPOCHS = 8
+    EPOCHS = 13
     SPLIT = 0.2  # validation split
 
     # similar to mnist model proposed by F. Chollet to deal with handwritten numbers
@@ -64,9 +65,12 @@ def train():
     # better then sigmoid for multiple classes
     model.add(Activation('softmax'))
 
+    # Optimizer
+    adadelta = optimizers.Adadelta(learning_rate=1.0, rho=0.95)
+
     # sparse_categorical_crossentropy for multiple classes with labels [0], [1], [2], [3], [4], [5], [6], [7], [8]
     model.compile(loss='sparse_categorical_crossentropy',
-                  optimizer='adam',  # Adadelta or adam
+                  optimizer=adadelta,  # Adadelta or adam
                   metrics=['accuracy'])
 
     model.fit(x_train, y_train, batch_size=BATCH_SIZE,
