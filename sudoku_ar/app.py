@@ -290,7 +290,7 @@ def getSudokuGridAsArray(num_classifier, digit_images, sudoku_shape):
     #     win[y_offset + 1:y_offset + text_height - 1, 1:text_height - 1] = resize
     #     predictions = num_classifier.predict([digit_image])
     #     text = "(" + str(i) + ", " + str(j) + ") " + \
-    #         str(predictions[0][0]) + " (" + str(predictions[0][1]) + ")"
+    #         str(predictions[0][0]) + " (" + "{0:.1%}".format(predictions[0][1]) + ")"
     #     cv2.putText(win, text, (text_height + 5, y_pos + 2),
     #                 font, font_scale, font_color)
     #     y_pos += text_height
