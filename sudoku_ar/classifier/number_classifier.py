@@ -8,8 +8,8 @@ from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten
 from tensorflow.keras.layers import Conv2D, MaxPooling2D
 from tensorflow.keras.callbacks import TensorBoard
-from tensorflow.compat.v1 import ConfigProto
-from tensorflow.compat.v1 import InteractiveSession
+# from tensorflow.compat.v1 import ConfigProto
+# from tensorflow.compat.v1 import InteractiveSession
 
 
 IMG_SIZE = 28
@@ -18,7 +18,7 @@ CATEGORIES = [1, 2, 3, 4, 5, 6, 7, 8, 9]  # possible numbers on sudoku grid
 
 def train():
 
-    TEST_MODEL_NAME = "num_classifier_{}.model".format(int(time.time()))
+    TEST_MODEL_NAME = "num_classifier_{}".format(int(time.time()))
     TEST_MODEL_PATH = TEST_MODEL_DIR / TEST_MODEL_NAME
     LOG_PATH = LOG_DIR / TEST_MODEL_NAME
 
@@ -76,22 +76,22 @@ def train():
     model.fit(x_train, y_train, batch_size=BATCH_SIZE,
               epochs=EPOCHS, validation_split=SPLIT, callbacks=[tensorboard])
 
-    print("Saving model in " + str(TEST_MODEL_PATH))
-    model.save(str(TEST_MODEL_PATH))  # save does not support pathlib paths
+    print("Saving model to " + str(TEST_MODEL_PATH) + ".h5")
+    model.save(str(TEST_MODEL_PATH) + ".h5")  # save does not support pathlib paths
 
 
 class NumberClassifier:
 
-    MODEL_NAME = "num_classifier.model"
+    MODEL_NAME = "num_classifier.h5"
     MODEL_PATH = MODEL_DIR / MODEL_NAME
 
     def __init__(self):
         # load_model does not support pathlib paths
         self.model = load_model(str(self.MODEL_PATH))
         # change config because of error with gpu
-        config = ConfigProto()
-        config.gpu_options.allow_growth = True
-        session = InteractiveSession(config=config)
+        # config = ConfigProto()
+        # config.gpu_options.allow_growth = True
+        # session = InteractiveSession(config=config)
 
     def __prepare(self, x_input_set):
 
