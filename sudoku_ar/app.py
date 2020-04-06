@@ -4,6 +4,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from sudoku_ar.classifier.number_classifier import NumberClassifier
 from sudoku_ar.solver.sudoku_solver import SudokuSolver
+from sudoku_ar.helper.umat_video_stream import UMatVideoStream
 
 
 def getHoughLines(image):
@@ -335,31 +336,26 @@ def run(capture_device):
     SUDOKU_GRID_HEIGHT = 450
     SUDOKU_GRID_WIDTH = 450
     SUDOKU_SHAPE = (9, 9)
+    SELECTION_RATE = 128
 
+    umat_video_stream = UMatVideoStream(capture_device, SELECTION_RATE)
     num_classifier = NumberClassifier()
     sudoku_solver = SudokuSolver()
 
     # get webcam feed
-    capture = cv2.VideoCapture(capture_device)
+    video = umat_video_stream.start()
+    rgb = cv2.UMat(video.height, video.width, cv2.CV_8UC3)
 
-    # check if feed could be captured
-    if not capture.isOpened():
-        sys.exit(1)
-
-    while True:
+    while not video.stopped:
         # TODO later probably needs parallelization
+        # maybe pipe lining is better
 
         # wait 1 ms or quit if 'q' is pressed
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
         # get frame of webcam feed
-        ret, frame = capture.read()
-
-        if ret == False:
-            print("Problem with capture device (press any key to close)")
-            cv2.waitKey(0)
-            sys.exit(1)
+        frame = video.read().get()
 
         # show webcam frame
         cv2.imshow("Webcam", frame)
@@ -396,5 +392,6 @@ def run(capture_device):
         # TODO check if new Sudoku grid was found, otherwise show old sudoku solution (only calculate it once!)
 
     # clean up
-    capture.release()
+    video.stop()
+    cv2.waitKey(0)
     cv2.destroyAllWindows()
