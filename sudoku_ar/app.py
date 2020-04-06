@@ -174,6 +174,8 @@ def cutOutDigit(cell_image, center_x, center_y):
         if left_b_found & right_b_found:
             break
 
+    # TODO check when right_b was not found if digit was shifted to left
+
     # non empty cell
     if (row_top != center_y) & (row_bottom != center_y) & (col_left != center_x) & (col_right != center_x):
         # get bounded image of digit
