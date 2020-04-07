@@ -94,7 +94,6 @@ class NumberClassifier:
         # session = InteractiveSession(config=config)
 
     def __prepare(self, x_input_set):
-
         prepared_set = []
 
         for x_input in x_input_set:
@@ -104,10 +103,10 @@ class NumberClassifier:
             x_input /= 255
             # reshape because keras expects this shape
             # x_input = np.array(x_input)
-            x_input = x_input.reshape(-1, IMG_SIZE, IMG_SIZE, 1)
+            x_input = x_input.reshape(IMG_SIZE, IMG_SIZE, 1)
             prepared_set.append(x_input)
 
-        return prepared_set
+        return np.asarray(prepared_set)
 
     def predict(self, images):
         # returns predicted number and the related confidence

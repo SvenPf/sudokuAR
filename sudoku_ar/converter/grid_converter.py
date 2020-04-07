@@ -171,9 +171,19 @@ class GridConverter:
         # font_color = (255, 255, 255)
         # --------------------------------------------------------
 
+        digit_batch = []
+
         for (grid_digit_image, i, j) in grid_digit_images:
-            predictions = self.classifier.predict([grid_digit_image])
-            sudoku_array[i, j] = predictions[0][0] # get predicted digit
+            digit_batch.append(grid_digit_image)
+
+        predictions = self.classifier.predict(digit_batch)
+        # print(predictions)
+
+        # TODO predicting digits is bottleneck !!!! -> maybe predict digits as batch
+        index = 0
+        for (grid_digit_image, i, j) in grid_digit_images:
+            sudoku_array[i, j] = predictions[index][0] # get predicted digit
+            index += 1
 
         # DEBUG :2 show all detected digit and their prediction -----------------------
         #     resize = cv2.resize(grid_digit_image, (text_height - 2, text_height - 2))
