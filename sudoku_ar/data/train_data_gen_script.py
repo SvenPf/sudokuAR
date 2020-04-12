@@ -1,9 +1,9 @@
-import tarfile
-import numpy as np
 import os
-import cv2
 import pickle
 import random
+import tarfile
+import cv2
+import numpy as np
 from dictionary.locations import X_TRAIN_DATA, Y_TRAIN_DATA, SAMPLES_TAR
 
 CATEGORIES = [1, 2, 3, 4, 5, 6, 7, 8, 9]  # possible numbers on sudoku grid

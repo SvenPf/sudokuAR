@@ -1,14 +1,14 @@
-import pickle
-import numpy as np
-import cv2
-import time
 import os
-from dictionary.locations import X_TRAIN_DATA, Y_TRAIN_DATA, MODEL_DIR, TEST_MODEL_DIR, LOG_DIR
+import time
+import pickle
+import cv2
+import numpy as np
 from tensorflow.keras import optimizers
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten
 from tensorflow.keras.layers import Conv2D, MaxPooling2D
 from tensorflow.keras.callbacks import TensorBoard
+from dictionary.locations import X_TRAIN_DATA, Y_TRAIN_DATA, MODEL_DIR, TEST_MODEL_DIR, LOG_DIR
 
 # allow gpu growth (solves error: Could not create cudnn handle: CUDNN_STATUS_INTERNAL_ERROR)
 os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"

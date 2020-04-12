@@ -1,6 +1,4 @@
-import sys
 import cv2
-import numpy as np
 from vison.grid_detector import GridDetecor
 from vison.perspective_transformer import PerspectiveTransformer
 from converter.grid_converter import GridConverter
