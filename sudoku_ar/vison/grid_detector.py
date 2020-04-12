@@ -77,7 +77,7 @@ class GridDetecor:
 
         grid_location = None
 
-        # TODO wohin mit preprocessing <-> perspective_transformer
+        # TODO wohin mit preprocessing <-> grid_converter
         # gray scale
         grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         # gaussian blur
