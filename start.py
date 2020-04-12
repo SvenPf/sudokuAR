@@ -1,4 +1,5 @@
-# Run with Python 3.7
+#!/usr/bin/env python3
+# Run with Python 3 or higher
 
 import sys
 import os
