@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 import time
 from sudoku_ar.dictionary.locations import X_TRAIN_DATA, Y_TRAIN_DATA, MODEL_DIR, TEST_MODEL_DIR, LOG_DIR
+from dictionary.locations import X_TRAIN_DATA, Y_TRAIN_DATA, MODEL_DIR, TEST_MODEL_DIR, LOG_DIR
 from tensorflow.keras import optimizers
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten

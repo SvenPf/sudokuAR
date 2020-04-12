@@ -1,7 +1,7 @@
 # Run with Python 3.7
 
 import sys
-import sudoku_ar.app as app
+import os
 
 if len(sys.argv) == 1:
     print("Options are --train, --gen, --path")
@@ -14,5 +14,4 @@ elif len(sys.argv) == 2:
         generator.main()
 elif len(sys.argv) == 3:
     if str(sys.argv[1]) == "--path":
-        # cv2.imread does not support pathlib paths
-        app.run(str(sys.argv[2]))
+        os.system("python sudoku_ar " + sys.argv[2])
