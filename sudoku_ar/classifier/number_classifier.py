@@ -1,16 +1,17 @@
-import pickle
-import numpy as np
-import cv2
+import os
 import time
-from sudoku_ar.dictionary.locations import X_TRAIN_DATA, Y_TRAIN_DATA, MODEL_DIR, TEST_MODEL_DIR, LOG_DIR
+import pickle
+import cv2
+import numpy as np
 from tensorflow.keras import optimizers
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten
 from tensorflow.keras.layers import Conv2D, MaxPooling2D
 from tensorflow.keras.callbacks import TensorBoard
-# from tensorflow.compat.v1 import ConfigProto
-# from tensorflow.compat.v1 import InteractiveSession
+from dictionary.locations import X_TRAIN_DATA, Y_TRAIN_DATA, MODEL_DIR, TEST_MODEL_DIR, LOG_DIR
 
+# allow gpu growth (solves error: Could not create cudnn handle: CUDNN_STATUS_INTERNAL_ERROR)
+os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
 
 IMG_SIZE = 28
 CATEGORIES = [1, 2, 3, 4, 5, 6, 7, 8, 9]  # possible numbers on sudoku grid
@@ -88,13 +89,11 @@ class NumberClassifier:
     def __init__(self):
         # load_model does not support pathlib paths
         self.model = load_model(str(self.MODEL_PATH))
-        # change config because of error with gpu
-        # config = ConfigProto()
-        # config.gpu_options.allow_growth = True
-        # session = InteractiveSession(config=config)
+
+        # pre prediction to fire loading of cuda and cudnn
+        self.model.predict(np.zeros((1, IMG_SIZE, IMG_SIZE, 1)))
 
     def __prepare(self, x_input_set):
-
         prepared_set = []
 
         for x_input in x_input_set:
@@ -103,11 +102,10 @@ class NumberClassifier:
             x_input = x_input.astype('float32')
             x_input /= 255
             # reshape because keras expects this shape
-            # x_input = np.array(x_input)
-            x_input = x_input.reshape(-1, IMG_SIZE, IMG_SIZE, 1)
+            x_input = x_input.reshape(IMG_SIZE, IMG_SIZE, 1)
             prepared_set.append(x_input)
 
-        return prepared_set
+        return np.asarray(prepared_set)
 
     def predict(self, images):
         # returns predicted number and the related confidence
