@@ -3,6 +3,8 @@
 import sys
 import os
 
+APP_NAME = "sudoku_ar"
+
 if len(sys.argv) == 1:
     print("Options are --train, --gen, --path")
 elif len(sys.argv) == 2:
@@ -14,4 +16,4 @@ elif len(sys.argv) == 2:
         generator.main()
 elif len(sys.argv) == 3:
     if str(sys.argv[1]) == "--path":
-        os.system("python sudoku_ar " + sys.argv[2])
+        os.system(sys.executable + " " + APP_NAME + " " + sys.argv[2])
