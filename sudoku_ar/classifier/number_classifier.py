@@ -90,6 +90,9 @@ class NumberClassifier:
         # load_model does not support pathlib paths
         self.model = load_model(str(self.MODEL_PATH))
 
+        # pre prediction to fire loading of cuda and cudnn
+        self.model.predict(np.zeros((1, IMG_SIZE, IMG_SIZE, 1)))
+
     def __prepare(self, x_input_set):
         prepared_set = []
 
@@ -99,7 +102,6 @@ class NumberClassifier:
             x_input = x_input.astype('float32')
             x_input /= 255
             # reshape because keras expects this shape
-            # x_input = np.array(x_input)
             x_input = x_input.reshape(IMG_SIZE, IMG_SIZE, 1)
             prepared_set.append(x_input)
 
