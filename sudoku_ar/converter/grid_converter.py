@@ -205,19 +205,13 @@ class GridConverter:
         return sudoku_array
 
     def convert_image_to_array(self, grid_image):
+        """
+        Expects preprocessed binary image of sudoku grid
+        """
 
         grid_array = []
 
-        # TODO wohin mit preprocessing <-> grid_detector
-        # gray scale
-        grey = cv2.cvtColor(grid_image, cv2.COLOR_BGR2GRAY)
-        # gaussian blur
-        blur = cv2.GaussianBlur(grey, (5, 5), 0)
-        # adaptive thresholding
-        threshold = cv2.adaptiveThreshold(
-            blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 2)
-
-        digit_images = self.__get_digit_images(threshold)
+        digit_images = self.__get_digit_images(grid_image)
 
         if(len(digit_images) > 0):
             grid_array = self.__get_as_array(digit_images)

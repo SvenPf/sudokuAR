@@ -27,6 +27,17 @@ class App:
             self.num_classifier, SUDOKU_SHAPE, SUDOKU_GRID_HEIGHT, SUDOKU_GRID_WIDTH)
         self.sudoku_solver = SudokuSolver()
 
+    def __preprocess(self, image):
+        # gray scale
+        grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        # gaussian blur
+        blur = cv2.GaussianBlur(grey, (5, 5), 0)
+        # adaptive thresholding
+        threshold = cv2.adaptiveThreshold(
+            blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 2)
+
+        return threshold
+
     def run(self):
 
         # get webcam feed
@@ -46,13 +57,16 @@ class App:
             # show webcam frame
             cv2.imshow("Webcam", frame)
 
-            grid_location = self.grid_detector.get_grid_location(frame)
+            # preprocess frame
+            preprocessed_frame = self.__preprocess(frame)
+
+            grid_location = self.grid_detector.get_grid_location(preprocessed_frame)
 
             if grid_location is None:
                 continue
 
             sudoku_grid_image = self.perspective_transformer.transform_image_perspective(
-                frame, grid_location)
+                preprocessed_frame, grid_location)
 
             # show converted frame
             cv2.imshow("Perspective Transformed", sudoku_grid_image)

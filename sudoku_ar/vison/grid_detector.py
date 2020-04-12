@@ -74,19 +74,14 @@ class GridDetecor:
         return hough_lines if found else None
 
     def get_grid_location(self, image):
+        """
+        Expects preprocessed binary image
+        """
 
         grid_location = None
 
-        # TODO wohin mit preprocessing <-> grid_converter
-        # gray scale
-        grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        # gaussian blur
-        blur = cv2.GaussianBlur(grey, (5, 5), 0)
-        # adaptive thresholding
-        threshold = cv2.adaptiveThreshold(
-            blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 2)
         # invert black/white so that contours are white
-        invert = cv2.bitwise_not(threshold)
+        invert = cv2.bitwise_not(image)
 
         # maybe better than adaptive thresholding
         # edge = cv2.Canny(grey, 50, 150, apertureSize=3)
