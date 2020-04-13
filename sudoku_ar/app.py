@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 from vison.grid_detector import GridDetecor
 from vison.perspective_transformer import PerspectiveTransformer
 from converter.grid_converter import GridConverter
@@ -42,6 +43,8 @@ class App:
 
         # get webcam feed
         video = self.umat_video_stream.start()
+        solved_sudoku_image = None
+        old_sudoku_grid_array = []
 
         while not video.stopped:
             # TODO later probably needs parallelization
@@ -59,10 +62,10 @@ class App:
 
             # preprocess frame
             preprocessed_frame = self.__preprocess(frame)
-
             grid_location = self.grid_detector.get_grid_location(preprocessed_frame)
 
             if grid_location is None:
+                solved_sudoku_image = None
                 continue
 
             sudoku_grid_image = self.perspective_transformer.transform_image_perspective(
@@ -76,18 +79,25 @@ class App:
 
             if len(sudoku_grid_array) > 0:
 
-                solved_sudoku_array = self.sudoku_solver.solve_array(
-                    sudoku_grid_array)
+                if not np.array_equal(sudoku_grid_array, old_sudoku_grid_array):
 
-                if len(solved_sudoku_array) > 0:
+                    solved_sudoku_array = self.sudoku_solver.solve_array(
+                        sudoku_grid_array)
 
-                    solved_sudoku_image = self.grid_converter.convert_array_to_image(
-                        solved_sudoku_array - sudoku_grid_array)
-                    wraped_solved_sudoku_image = self.perspective_transformer.inverse_transform_image_perspective(
-                        solved_sudoku_image, video.height, video.width)
+                    if len(solved_sudoku_array) > 0:
 
-                    cv2.imshow("Solution", cv2.addWeighted(
-                        frame, 0.8, wraped_solved_sudoku_image, 0.5, 0.0))
+                        solved_sudoku_image = self.grid_converter.convert_array_to_image(
+                            solved_sudoku_array - sudoku_grid_array)
+
+                    old_sudoku_grid_array = sudoku_grid_array
+
+            if solved_sudoku_image is not None:
+
+                wraped_solved_sudoku_image = self.perspective_transformer.inverse_transform_image_perspective(
+                    solved_sudoku_image, video.height, video.width)
+
+                cv2.imshow("Solution", cv2.addWeighted(
+                    frame, 0.8, wraped_solved_sudoku_image, 0.5, 0.0))
 
             # TODO check if new Sudoku grid was found, otherwise show old sudoku solution (only calculate it once!)
 
