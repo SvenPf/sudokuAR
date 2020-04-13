@@ -17,7 +17,6 @@ class App:
         SUDOKU_SHAPE = (9, 9)
         SELECTION_RATE = 128
 
-        self.capture_device = capture_device
         self.grid_detector = GridDetecor()
         self.perspective_transformer = PerspectiveTransformer(
             SUDOKU_GRID_HEIGHT, SUDOKU_GRID_WIDTH)
@@ -56,6 +55,9 @@ class App:
 
             # get frame of webcam feed
             frame = video.read().get()
+
+            if frame is None:
+                break
 
             # show webcam frame
             cv2.imshow("Webcam", frame)
@@ -101,7 +103,7 @@ class App:
 
             # TODO check if new Sudoku grid was found, otherwise show old sudoku solution (only calculate it once!)
 
-        # clean up
-        video.stop()
+        print("Video stream was stopped (Press any Key to close)")
         cv2.waitKey(0)
+        # clean up
         cv2.destroyAllWindows()

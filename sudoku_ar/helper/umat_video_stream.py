@@ -24,7 +24,7 @@
 # SOFTWARE.
 
 # import the necessary packages
-from threading import Thread
+from threading import Thread, Lock
 import sys
 import cv2
 from time import sleep
@@ -46,6 +46,7 @@ class UMatVideoStream:
         self.stream = cv2.VideoCapture(path)
         self.stopped = False
         self.count = 0
+        self.lock = Lock()
 
         # initialize the queue used to store frames read from
         # the video file
@@ -99,11 +100,11 @@ class UMatVideoStream:
                 # add the frame to the queue
                 self.Q.put(target)
 
-    def read(self):
-        while (not self.more() and self.stopped):
-            sleep(0.1)
+    def read(self, timeout=5):
+        if not self.more():
+            sleep(timeout)
         # return next frame in the queue
-        return self.frames[self.Q.get()]
+        return self.frames[self.Q.get()] if self.more() else None
 
     def more(self):
         # return True if there are still frames in the queue
@@ -111,4 +112,5 @@ class UMatVideoStream:
 
     def stop(self):
         # indicate that the thread should be stopped
-        self.stopped = True
+        with self.lock:
+            self.stopped = True
