@@ -40,7 +40,7 @@ class GridConverter:
 
         # pad digit image
         padded_digit = cv2.copyMakeBorder(digit_image, pad_tb + extra_pad, pad_tb + pad_tb_corr + extra_pad,
-                                        pad_lr + extra_pad, pad_lr + pad_lr_corr + extra_pad, cv2.BORDER_CONSTANT, value=255)
+                                          pad_lr + extra_pad, pad_lr + pad_lr_corr + extra_pad, cv2.BORDER_CONSTANT, value=255)
 
         # DEBUG ---------------------------
         # cv2.imshow("padding", padded_digit)
@@ -67,10 +67,14 @@ class GridConverter:
         scan_image = cv2.bitwise_not(cell_image)
 
         # scanned borders
-        row_top = self.cell_image_center_y - scan_border_y  # top edge of scan border on y axis
-        row_bottom = self.cell_image_center_y + scan_border_y  # bottom edge of scan border on y axis
-        col_left = self.cell_image_center_x - scan_border_x  # left edge of scan border on x axis
-        col_right = self.cell_image_center_x + scan_border_x  # right edge of scan border on x axis
+        # top edge of scan border on y axis
+        row_top = self.cell_image_center_y - scan_border_y
+        # bottom edge of scan border on y axis
+        row_bottom = self.cell_image_center_y + scan_border_y
+        # left edge of scan border on x axis
+        col_left = self.cell_image_center_x - scan_border_x
+        # right edge of scan border on x axis
+        col_right = self.cell_image_center_x + scan_border_x
 
         top_b_found = False
         bottom_b_found = False
@@ -130,7 +134,7 @@ class GridConverter:
                 pt_x = self.cell_image_width * j
                 pt_y = self.cell_image_height * i
                 cell_image = grid_image[pt_y:pt_y +
-                                self.cell_image_height, pt_x:pt_x + self.cell_image_width]
+                                        self.cell_image_height, pt_x:pt_x + self.cell_image_width]
 
                 digit_image = self.__cut_out_digit(cell_image)
 
@@ -154,9 +158,9 @@ class GridConverter:
 
     def __get_as_array(self, grid_digit_images):
 
-        assert(len(grid_digit_images) > 0)
+        assert len(grid_digit_images) > 0
 
-        # empty sudoku grid
+        # empty sudoku grid array
         sudoku_array = np.zeros(self.sudoku_shape, np.uint8)
 
         # DEBUG :1 show all detected digit and their prediction --
@@ -171,19 +175,16 @@ class GridConverter:
         # font_color = (255, 255, 255)
         # --------------------------------------------------------
 
-        digit_batch = []
+        # create Batch of digit image
+        digit_images_batch = [grid_digit_image[0]
+                              for grid_digit_image in grid_digit_images]
 
-        for (grid_digit_image, i, j) in grid_digit_images:
-            digit_batch.append(grid_digit_image)
+        predictions = self.classifier.predict(digit_images_batch)
 
-        predictions = self.classifier.predict(digit_batch)
-        # print(predictions)
-
-        # TODO predicting digits is bottleneck !!!! -> maybe predict digits as batch
-        index = 0
-        for (grid_digit_image, i, j) in grid_digit_images:
-            sudoku_array[i, j] = predictions[index][0] # get predicted digit
-            index += 1
+        predications_iterator = iter(predictions)
+        for (_, i, j) in grid_digit_images:
+            # get predicted digit
+            sudoku_array[i, j] = next(predications_iterator)[0]
 
         # DEBUG :2 show all detected digit and their prediction -----------------------
         #     resize = cv2.resize(grid_digit_image, (text_height - 2, text_height - 2))
@@ -213,7 +214,7 @@ class GridConverter:
 
         digit_images = self.__get_digit_images(grid_image)
 
-        if(len(digit_images) > 0):
+        if len(digit_images) > 0:
             grid_array = self.__get_as_array(digit_images)
 
         return grid_array
@@ -223,7 +224,8 @@ class GridConverter:
         padding_x = int(self.cell_image_width * 0.3)
         padding_y = int(self.cell_image_height * 0.3)
 
-        image = np.zeros((self.grid_image_height, self.grid_image_width, 3), np.uint8)
+        image = np.zeros(
+            (self.grid_image_height, self.grid_image_width, 3), np.uint8)
 
         font = cv2.FONT_HERSHEY_SIMPLEX
         font_scale = 0.8
