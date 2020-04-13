@@ -26,7 +26,7 @@ class GridDetecor:
             poly_approx = cv2.approxPolyDP(max_area_contour, epsilon, True)
 
             # rectangle needs only 4 points
-            if len(poly_approx) >= 4:
+            if len(poly_approx) == 4:
                 found = True
                 # convex hull for better approximation of rectangle
                 hull = cv2.convexHull(poly_approx)
@@ -56,10 +56,10 @@ class GridDetecor:
         hough_lines = np.zeros(image.shape, dtype=np.uint8)
 
         # get hough transform
-        lines = cv2.HoughLinesP(image, 1, np.pi/180, 50, minLineLength=5)
+        lines = cv2.HoughLinesP(image, 1, np.pi/180, 50, minLineLength=50)
 
         # check if any lines were found
-        if len(lines) != 0:
+        if (lines is not None) and (len(lines) != 0):
             found = True
             # draw all found lines in source image
             for line in lines:
@@ -92,8 +92,9 @@ class GridDetecor:
             grid_location = self.__get_max_rectangle(hough_lines)
 
             # DEBUG : draw max rectangle -------------------
-            # cv2.imshow('Max Area Rectangle', cv2.polylines(
-            #     image.copy(), [np.int32(max_rectangle)], True, (0, 255, 0), 2))
+            # if grid_location is not None:
+            #     cv2.imshow('Max Area Rectangle', cv2.polylines(
+            #         cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), [np.int32(grid_location)], True, (0, 255, 0), 2))
             # ----------------------------------------------
 
         return grid_location
