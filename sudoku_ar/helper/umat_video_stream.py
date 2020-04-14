@@ -100,8 +100,10 @@ class UMatVideoStream:
                 # add the frame to the queue
                 self.Q.put(target)
 
-    def read(self, timeout=5):
-        if not self.more():
+    def read(self, timeout=0.1, max_time=5):
+        counter = 0
+        while (not self.more()) and (counter < int(max_time / timeout)):
+            counter += 1
             sleep(timeout)
         # return next frame in the queue
         return self.frames[self.Q.get()] if self.more() else None
