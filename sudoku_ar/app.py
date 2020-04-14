@@ -35,15 +35,17 @@ class App:
         # adaptive thresholding
         threshold = cv2.adaptiveThreshold(
             blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 2)
+        # TODO noice canceling
 
         return threshold
 
     def run(self):
 
-        # get webcam feed
-        video = self.umat_video_stream.start()
+        frame = cv2.UMat(self.umat_video_stream.height, self.umat_video_stream.width, cv2.CV_8UC3)
         solved_sudoku_image = None
         old_sudoku_grid_array = []
+        # get webcam feed
+        video = self.umat_video_stream.start()
 
         while not video.stopped:
             # TODO later probably needs parallelization
@@ -51,10 +53,11 @@ class App:
 
             # wait 1 ms or quit if 'q' is pressed
             if cv2.waitKey(1) & 0xFF == ord('q'):
+                video.stop()
                 break
 
             # get frame of webcam feed
-            frame = video.read().get()
+            frame = video.read()
 
             if frame is None:
                 break
@@ -64,7 +67,7 @@ class App:
 
             # preprocess frame
             preprocessed_frame = self.__preprocess(frame)
-            grid_location = self.grid_detector.get_grid_location(preprocessed_frame)
+            grid_location = self.grid_detector.get_grid_location(preprocessed_frame, video.height, video.width)
 
             if grid_location is None:
                 solved_sudoku_image = None
@@ -76,8 +79,9 @@ class App:
             # show converted frame
             cv2.imshow("Perspective Transformed", sudoku_grid_image)
 
+            # TODO convert to UMat
             sudoku_grid_array = self.grid_converter.convert_image_to_array(
-                sudoku_grid_image)
+                sudoku_grid_image.get())
 
             if len(sudoku_grid_array) > 0:
 
