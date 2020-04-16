@@ -28,14 +28,8 @@ from threading import Thread, Lock
 import sys
 import cv2
 from time import sleep
+from queue import Queue
 
-# import the Queue class from Python 3
-if sys.version_info >= (3, 0):
-    from queue import Queue
-
-# otherwise, import the Queue class for Python 2.7
-else:
-    from Queue import Queue
 
 
 class UMatVideoStream:
@@ -45,7 +39,8 @@ class UMatVideoStream:
         # used to indicate if the thread should be stopped or not
         self.stream = cv2.VideoCapture(path)
         self.stopped = False
-        self.count = 0
+        self.frame_ctr = 0
+        self.read_ctr = 0
         self.lock = Lock()
 
         # initialize the queue used to store frames read from
@@ -82,29 +77,41 @@ class UMatVideoStream:
                 return
 
             # otherwise, ensure the queue has room in it
-            if not self.Q.full():
-                # read the next frame from the file
-                # (grabbed, frame) = self.stream.read()
-                self.count += 1
-                target = (self.count-1) % self.Q.maxsize
-                grabbed = self.stream.grab()
+        # if not self.Q.full():
+            # read the next frame from the file
+            # (grabbed, frame) = self.stream.read()
+            target = self.frame_ctr % self.Q.maxsize
+            grabbed = self.stream.grab()
 
-                # if the `grabbed` boolean is `False`, then we have
-                # reached the end of the video file
-                if not grabbed:
-                    self.stop()
-                    return
+            # if the `grabbed` boolean is `False`, then we have
+            # reached the end of the video file
+            if not grabbed:
+                self.stop()
+                return
 
-                self.stream.retrieve(self.frames[target])
+            print("skipped frames ", self.frame_ctr - self.read_ctr)
+            self.frame_ctr += 1
+            print("frame counter ", self.frame_ctr)
 
-                # add the frame to the queue
-                self.Q.put(target)
+            ret, frame = self.stream.retrieve()
+            self.frames[target] = cv2.UMat(frame)
+
+            if not ret:
+                self.stop()
+                return
+
+            # add the frame to the queue
+            self.Q.put(target)
+        # else:
+            # sleep(0.1)
 
     def read(self, timeout=0.1, max_time=5):
-        counter = 0
-        while (not self.more()) and (counter < int(max_time / timeout)):
-            counter += 1
+        sleep_ctr = 0
+        while (not self.more()) and (sleep_ctr < int(max_time / timeout)):
+            sleep_ctr += 1
             sleep(timeout)
+        if self.more():
+            self.read_ctr += 1
         # return next frame in the queue
         return self.frames[self.Q.get()] if self.more() else None
 
