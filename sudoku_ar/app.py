@@ -47,7 +47,7 @@ class App:
         # get webcam feed
         video = self.umat_video_stream.start()
 
-        while not video.stopped:
+        while not video.stopped():
             # TODO later probably needs parallelization
             # maybe pipe lining is better
 
