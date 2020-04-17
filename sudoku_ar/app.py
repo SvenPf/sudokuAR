@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from vison.grid_detector import GridDetecor
+from vison.grid_detector import GridDetector
 from vison.perspective_transformer import PerspectiveTransformer
 from converter.grid_converter import GridConverter
 from classifier.number_classifier import NumberClassifier
@@ -18,7 +18,7 @@ class App:
         SUDOKU_GRID_WIDTH = 450
         SUDOKU_SHAPE = (9, 9)
 
-        self.grid_detector = GridDetecor()
+        self.grid_detector = GridDetector()
         self.perspective_transformer = PerspectiveTransformer(
             SUDOKU_GRID_HEIGHT, SUDOKU_GRID_WIDTH)
         self.stream_capture_process = StreamCaptureProcess(

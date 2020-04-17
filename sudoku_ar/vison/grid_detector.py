@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 
-class GridDetecor:
+class GridDetector:
 
     def __init__(self):
         pass
