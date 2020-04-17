@@ -6,7 +6,7 @@ from time import sleep
 import numpy as np
 
 
-class UMatVideoStream:
+class StreamCaptureProcess:
 
     process = None
     shared_mem = None

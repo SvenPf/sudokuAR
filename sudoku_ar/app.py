@@ -5,23 +5,24 @@ from vison.perspective_transformer import PerspectiveTransformer
 from converter.grid_converter import GridConverter
 from classifier.number_classifier import NumberClassifier
 from solver.sudoku_solver import SudokuSolver
-from helper.umat_video_stream import UMatVideoStream
+from capture.stream_capture_process import StreamCaptureProcess
 
 
 class App:
 
     def __init__(self, capture_device):
 
+        PREF_FRAME_WIDTH = 800
+        PREF_FRAME_HEIGHT = 600
         SUDOKU_GRID_HEIGHT = 450
         SUDOKU_GRID_WIDTH = 450
         SUDOKU_SHAPE = (9, 9)
-        SELECTION_RATE = 128
 
         self.grid_detector = GridDetecor()
         self.perspective_transformer = PerspectiveTransformer(
             SUDOKU_GRID_HEIGHT, SUDOKU_GRID_WIDTH)
-        self.umat_video_stream = UMatVideoStream(
-            capture_device, SELECTION_RATE)
+        self.stream_capture_process = StreamCaptureProcess(
+            capture_device, PREF_FRAME_WIDTH, PREF_FRAME_HEIGHT)
         self.num_classifier = NumberClassifier()
         self.grid_converter = GridConverter(
             self.num_classifier, SUDOKU_SHAPE, SUDOKU_GRID_HEIGHT, SUDOKU_GRID_WIDTH)
@@ -41,23 +42,24 @@ class App:
 
     def run(self):
 
-        frame = cv2.UMat(self.umat_video_stream.height, self.umat_video_stream.width, cv2.CV_8UC3)
+        frame = cv2.UMat(self.stream_capture_process.height,
+                         self.stream_capture_process.width, cv2.CV_8UC3)
         solved_sudoku_image = None
         old_sudoku_grid_array = []
         # get webcam feed
-        video = self.umat_video_stream.start()
+        stream = self.stream_capture_process.start()
 
-        while not video.stopped():
+        while not stream.stopped():
             # TODO later probably needs parallelization
             # maybe pipe lining is better
 
             # wait 1 ms or quit if 'q' is pressed
             if cv2.waitKey(1) & 0xFF == ord('q'):
-                video.stop()
+                stream.stop()
                 break
 
             # get frame of webcam feed
-            frame = video.read()
+            frame = cv2.UMat(stream.read())
 
             if frame is None:
                 break
@@ -67,7 +69,8 @@ class App:
 
             # preprocess frame
             preprocessed_frame = self.__preprocess(frame)
-            grid_location = self.grid_detector.get_grid_location(preprocessed_frame, video.height, video.width)
+            grid_location = self.grid_detector.get_grid_location(
+                preprocessed_frame, stream.height, stream.width)
 
             if grid_location is None:
                 solved_sudoku_image = None
@@ -100,13 +103,14 @@ class App:
             if solved_sudoku_image is not None:
 
                 wraped_solved_sudoku_image = self.perspective_transformer.inverse_transform_image_perspective(
-                    solved_sudoku_image, video.height, video.width)
+                    solved_sudoku_image, stream.height, stream.width)
 
                 cv2.imshow("Solution", cv2.addWeighted(
                     frame, 0.8, wraped_solved_sudoku_image, 0.5, 0.0))
 
             # TODO check if new Sudoku grid was found, otherwise show old sudoku solution (only calculate it once!)
 
+        print("Total skipped frames: ", stream.get_skipped_count())
         print("Video stream was stopped (Press any Key to close)")
         cv2.waitKey(0)
         # clean up
