@@ -12,8 +12,7 @@ class App:
 
     def __init__(self, capture_device):
 
-        PREF_FRAME_WIDTH = 800
-        PREF_FRAME_HEIGHT = 600
+        PREF_FRAME_VERT_RES = 480
         SUDOKU_GRID_HEIGHT = 450
         SUDOKU_GRID_WIDTH = 450
         SUDOKU_SHAPE = (9, 9)
@@ -22,7 +21,7 @@ class App:
         self.perspective_transformer = PerspectiveTransformer(
             SUDOKU_GRID_HEIGHT, SUDOKU_GRID_WIDTH)
         self.stream_capture_process = StreamCaptureProcess(
-            capture_device, PREF_FRAME_WIDTH, PREF_FRAME_HEIGHT)
+            capture_device, height=PREF_FRAME_VERT_RES)
         self.num_classifier = NumberClassifier()
         self.grid_converter = GridConverter(
             self.num_classifier, SUDOKU_SHAPE, SUDOKU_GRID_HEIGHT, SUDOKU_GRID_WIDTH)
@@ -36,7 +35,7 @@ class App:
         # adaptive thresholding
         threshold = cv2.adaptiveThreshold(
             blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 2)
-        # TODO noice canceling
+        # TODO noise canceling
 
         return threshold
 

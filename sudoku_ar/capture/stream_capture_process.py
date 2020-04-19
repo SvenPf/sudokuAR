@@ -25,12 +25,22 @@ class StreamCaptureProcess:
             stream.release()
             sys.exit("Error while trying to open video capture with path " + path)
 
-        # We need some info from the file first. See more at:
-        # https://docs.opencv.org/4.1.0/d4/d15/group__videoio__flags__base.html#gaeb8dd9c89c10a5c63c139bf7c4f5704d
-        self.width = int(stream.get(cv2.CAP_PROP_FRAME_WIDTH)
-                         ) if width == 0 else width
-        self.height = int(stream.get(cv2.CAP_PROP_FRAME_HEIGHT)
-                          ) if height == 0 else height
+        # get preferred width and height while trying to keep aspect ratio
+        if width == 0 and height == 0:
+            self.width = int(stream.get(cv2.CAP_PROP_FRAME_WIDTH))
+            self.height = int(stream.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        elif height == 0:
+            self.width = width
+            ratio = width / stream.get(cv2.CAP_PROP_FRAME_WIDTH)
+            self.height = int(stream.get(cv2.CAP_PROP_FRAME_HEIGHT) * ratio)
+        elif width == 0:
+            self.height = height
+            ratio = height / stream.get(cv2.CAP_PROP_FRAME_HEIGHT)
+            self.width = int(stream.get(cv2.CAP_PROP_FRAME_WIDTH) * ratio)
+        else:
+            self.width = width
+            self.height = height
+
         stream.release()
 
         # create shared memory for passing images
