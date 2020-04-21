@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
-from vison.grid_detector import GridDetector
-from vison.perspective_transformer import PerspectiveTransformer
+from vision.grid_detector import GridDetector
+from vision.perspective_transformer import PerspectiveTransformer
 from converter.grid_converter import GridConverter
 from classifier.number_classifier import NumberClassifier
 from solver.sudoku_solver import SudokuSolver

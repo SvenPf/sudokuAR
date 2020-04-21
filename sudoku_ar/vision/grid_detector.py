@@ -87,7 +87,6 @@ class GridDetector:
         # invert black/white so that contours are white
         invert = cv2.bitwise_not(image)
 
-        # maybe better than adaptive thresholding
         hough_lines = self.__get_hough_lines(invert, height, width)
 
         if hough_lines is not None:
