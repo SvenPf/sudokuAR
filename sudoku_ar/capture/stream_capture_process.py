@@ -4,19 +4,17 @@ from multiprocessing import Process, Value, Lock, shared_memory
 import cv2
 from time import sleep
 import numpy as np
+from helper.shared_numpy import SharedNumpy
 
 
 class StreamCaptureProcess:
 
     process = None
-    shared_mem = None
 
     def __init__(self, path, width=0, height=0):
         self.path = path
-        self.shared_mem_lock = Lock()
         self.read_ctr = 0
         self.frame_ctr = Value('I', 0)
-        self.sig_new = Value('b', False)
         self.first_read = True
 
         # get stream feed to optain width and height
@@ -44,16 +42,10 @@ class StreamCaptureProcess:
         stream.release()
 
         # create shared memory for passing images
-        self.shared_mem = shared_memory.SharedMemory(
-            create=True, size=self.height * self.width * 3)
-        self.newest_frame = np.ndarray(
-            (self.height, self.width, 3), dtype=np.uint8, buffer=self.shared_mem.buf)
+        self.shared_frame = SharedNumpy((self.height, self.width, 3), np.uint8, sig_on_write=True)
 
     def __del__(self):
-        print("delete ", os.getpid())
-
-        if self.shared_mem is not None:
-            self.shared_mem.unlink()
+        print("delete Capture", os.getpid())
 
         if not self.stopped():
             self.stop()
@@ -61,20 +53,17 @@ class StreamCaptureProcess:
     def start(self):
         print("start video capture")
         self.process = Process(target=self.update, args=(
-            self.path, self.width, self.height, self.shared_mem, self.shared_mem_lock, self.sig_new, self.frame_ctr))
-        self.process.daemon = True
+            self.path, self.width, self.height, self.shared_frame, self.frame_ctr))
+        self.process.daemon = True # terminates all child processes on parent exit
         self.process.start()
         return self
 
-    def update(self, path, width, height, shared_mem, shared_mem_lock, sig_new, frame_ctr):
+    def update(self, path, width, height, shared_frame, frame_ctr):
 
         stream = cv2.VideoCapture(path)
         if not stream.isOpened():
             stream.release()
             return
-
-        newest_frame = np.ndarray(
-            (height, width, 3), dtype=np.uint8, buffer=shared_mem.buf)
 
         # keep looping infinitely
         while True:
@@ -97,11 +86,7 @@ class StreamCaptureProcess:
             with frame_ctr.get_lock():
                 frame_ctr.value += 1
 
-            with shared_mem_lock:
-                np.copyto(newest_frame, frame)
-
-            with sig_new.get_lock():
-                sig_new.value = True
+            shared_frame.write(frame)
 
             cv2.imshow("lag free webcam", frame)
             # wait 1 ms or quit if 'q' is pressed
@@ -112,17 +97,8 @@ class StreamCaptureProcess:
             # sleep(0.05)
 
     def read(self):
-        frame = None
-        new_frame_av = False
-
         # only for evaluating skipped frames
-        with self.sig_new.get_lock():
-            if self.sig_new.value:
-                new_frame_av = True
-                self.sig_new.value = False
-
-        # only for evaluating skipped frames
-        if new_frame_av:
+        if self.shared_frame.receive_signal():
             self.read_ctr += 1
 
             if self.first_read:
@@ -130,11 +106,8 @@ class StreamCaptureProcess:
                     self.frame_ctr.value = 1
                 self.first_read = False
 
-        # get newest frame or black image
-        with self.shared_mem_lock:
-            frame = self.newest_frame
-
-        return frame
+        # return newest frame or black image
+        return self.shared_frame.read()
 
     def stop(self):
         print("stop video capture")
