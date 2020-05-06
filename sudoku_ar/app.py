@@ -2,8 +2,7 @@ import cv2
 import numpy as np
 from vision.grid_detector import GridDetector
 from vision.perspective_transformer import PerspectiveTransformer
-from converter.grid_converter import GridConverter
-from classifier.number_classifier import NumberClassifier
+from converter.grid_converter_wrapper import GridConverterWrapper
 from solver.sudoku_solver import SudokuSolver
 from capture.stream_capture_process import StreamCaptureProcess
 
@@ -22,9 +21,8 @@ class App:
             SUDOKU_GRID_HEIGHT, SUDOKU_GRID_WIDTH)
         self.stream_capture_process = StreamCaptureProcess(
             capture_device, height=PREF_FRAME_VERT_RES)
-        self.num_classifier = NumberClassifier()
-        self.grid_converter = GridConverter(
-            self.num_classifier, SUDOKU_SHAPE, SUDOKU_GRID_HEIGHT, SUDOKU_GRID_WIDTH)
+        self.grid_converter = GridConverterWrapper(
+            SUDOKU_SHAPE, SUDOKU_GRID_HEIGHT, SUDOKU_GRID_WIDTH)
         self.sudoku_solver = SudokuSolver()
 
     def __preprocess(self, image):

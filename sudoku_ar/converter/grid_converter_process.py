@@ -1,11 +1,18 @@
 import cv2
 import numpy as np
+from multiprocessing import Process
+from time import sleep
+from classifier.number_classifier import NumberClassifier
+
+UPDATE_RATE = 1  # in seconds
 
 
-class GridConverter:
+class GridConverterProcess(Process):
 
-    def __init__(self, classifier, sudoku_shape, grid_image_height, grid_image_width):
-        self.classifier = classifier
+    def __init__(self, sudoku_shape, grid_image_height, grid_image_width, shared_grid_image, shared_grid_array):
+
+        Process.__init__(self)
+
         self.sudoku_shape = sudoku_shape
 
         self.grid_image_height = grid_image_height
@@ -14,6 +21,9 @@ class GridConverter:
         self.cell_image_width = int(grid_image_width / sudoku_shape[1])
         self.cell_image_center_x = int(self.cell_image_width / 2)
         self.cell_image_center_y = int(self.cell_image_height / 2)
+
+        self.shared_grid_image = shared_grid_image
+        self.shared_grid_array = shared_grid_array
 
     def __pad_digit_image(self, digit_image):
 
@@ -90,7 +100,7 @@ class GridConverter:
             if (not bottom_b_found) & (np.sum(scan_image[self.cell_image_center_y + y, (self.cell_image_center_x - scan_border_x):(self.cell_image_center_x + scan_border_x)]) < threshold):
                 row_bottom = self.cell_image_center_y + y
                 bottom_b_found = True
-            if(top_b_found & bottom_b_found):
+            if top_b_found & bottom_b_found:
                 break
 
         for x in range(scan_border_x + 1):
@@ -156,7 +166,7 @@ class GridConverter:
 
         return digit_images
 
-    def __get_as_array(self, grid_digit_images):
+    def __get_as_array(self, classifier, grid_digit_images):
 
         assert len(grid_digit_images) > 0
 
@@ -165,7 +175,7 @@ class GridConverter:
 
         # DEBUG :1 show all detected digit and their prediction --
         # text_height = 30
-        # w_height = len(digit_images) * text_height
+        # w_height = len(grid_digit_images) * text_height
         # w_width = 210
         # y_pos = int(text_height / 2)
         # win = np.zeros((w_height, w_width), np.uint8)
@@ -179,7 +189,7 @@ class GridConverter:
         digit_images_batch = [grid_digit_image[0]
                               for grid_digit_image in grid_digit_images]
 
-        predictions = self.classifier.predict(digit_images_batch)
+        predictions = classifier.predict(digit_images_batch)
 
         predications_iterator = iter(predictions)
         for (_, i, j) in grid_digit_images:
@@ -205,39 +215,23 @@ class GridConverter:
 
         return sudoku_array
 
-    def convert_image_to_array(self, grid_image):
-        """
-        Expects preprocessed binary image of sudoku grid
-        """
 
-        grid_array = []
+    def run(self):
 
-        digit_images = self.__get_digit_images(grid_image)
+        classifier = NumberClassifier()
 
-        if len(digit_images) > 0:
-            grid_array = self.__get_as_array(digit_images)
+        while True:
+            sleep(UPDATE_RATE)
 
-        return grid_array
+            if not self.shared_grid_image.receive_signal:
+                continue
 
-    def convert_array_to_image(self, grid_array):
+            grid_image = self.shared_grid_image.read()
 
-        padding_x = int(self.cell_image_width * 0.3)
-        padding_y = int(self.cell_image_height * 0.3)
+            digit_images = self.__get_digit_images(grid_image)
 
-        image = np.zeros(
-            (self.grid_image_height, self.grid_image_width, 3), np.uint8)
+            if len(digit_images) > 0:
+                grid_array = self.__get_as_array(classifier, digit_images)
 
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 0.8
-        font_color = (0, 255, 0)
-
-        for i in range(self.sudoku_shape[0]):
-            for j in range(self.sudoku_shape[1]):
-                digit = grid_array[i][j]
-                if digit > 0:
-                    y_start = self.cell_image_height * (i + 1) - padding_y
-                    x_start = self.cell_image_width * j + padding_x
-                    cv2.putText(image, str(digit), (x_start, y_start),
-                                font, font_scale, font_color, 2)
-
-        return image
+                print(grid_array)
+                self.shared_grid_array.write(grid_array)
