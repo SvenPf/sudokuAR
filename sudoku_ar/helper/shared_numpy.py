@@ -1,4 +1,4 @@
-from multiprocessing import Process, Value, Lock, shared_memory
+from multiprocessing import Value, Lock, shared_memory
 from math import prod
 import numpy as np
 
