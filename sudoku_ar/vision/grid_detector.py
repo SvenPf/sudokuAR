@@ -15,25 +15,33 @@ class GridDetector:
         contours, _ = cv2.findContours(
             image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
+        contours = sorted(contours, key=cv2.contourArea, reverse=True)
+
         # atleast one contour must be found
         if len(contours) > 0:
-            max_rectangle = np.zeros((4, 2), dtype="float32")
 
-            # find the biggest countour by area
-            max_area_contour = max(contours, key=cv2.contourArea)
+            max_contour = None
 
-            # approximate polygon of given contour
-            epsilon = 0.01 * cv2.arcLength(max_area_contour, True)
-            poly_approx = cv2.approxPolyDP(max_area_contour, epsilon, True)
+            for contour in contours:
+                # threshold for contour area
+                if cv2.contourArea(contour) < (image.shape[0] * image.shape[1]) / 20:
+                    break
 
-            # rectangle needs only 4 points
-            if len(poly_approx) == 4:
+                # approximate polygon of given contour
+                epsilon = 0.02 * cv2.arcLength(contour, True)
+                poly_approx = cv2.approxPolyDP(contour, epsilon, True)
 
-                # convex hull for better approximation of rectangle
-                hull = cv2.convexHull(poly_approx)
+                # rectangle needs only 4 points
+                if len(poly_approx) == 4:
+                    max_contour = poly_approx
+                    break
+
+            if max_contour is not None:
+
+                max_rectangle = np.zeros((4, 2), dtype=np.float32)
 
                 # reshape for convenience
-                points = hull.reshape(-1, 2)
+                points = max_contour.reshape(-1, 2)
 
                 # the top-left point has the smallest sum
                 # whereas the bottom-right has the largest sum

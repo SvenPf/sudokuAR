@@ -69,7 +69,7 @@ class App:
                 preprocessed_frame, stream.height, stream.width)
 
             if grid_location is None:
-                solved_sudoku_image = None
+                # solved_sudoku_image = None
                 continue
 
             sudoku_grid_image = self.perspective_transformer.transform_image_perspective(
