@@ -48,7 +48,6 @@ class App:
 
         while not stream.stopped():
             # TODO later probably needs parallelization
-            # maybe pipe lining is better
 
             # wait 1 ms or quit if 'q' is pressed
             if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -62,7 +61,7 @@ class App:
                 break
 
             # show webcam frame
-            cv2.imshow("Webcam", frame)
+            # cv2.imshow("Webcam", frame)
 
             # preprocess frame
             preprocessed_frame = self.__preprocess(frame)
@@ -85,6 +84,7 @@ class App:
 
             if len(sudoku_grid_array) > 0:
 
+                # check if new grid was found
                 if not np.array_equal(sudoku_grid_array, old_sudoku_grid_array):
 
                     solved_sudoku_array = self.sudoku_solver.solve_array(
@@ -104,8 +104,9 @@ class App:
 
                 cv2.imshow("Solution", cv2.addWeighted(
                     frame, 0.8, wraped_solved_sudoku_image, 0.5, 0.0))
-
-            # TODO check if new Sudoku grid was found, otherwise show old sudoku solution (only calculate it once!)
+            else:
+                # show webcam frame
+                cv2.imshow("Solution", frame)
 
         print("Total skipped frames: ", stream.get_skipped_count())
         print("Video stream was stopped (Press any Key to close)")
